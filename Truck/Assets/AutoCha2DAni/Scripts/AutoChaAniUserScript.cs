@@ -1,0 +1,138 @@
+﻿using System.Collections;
+using System.Collections.Generic;
+using UnityEngine.UI;
+using UnityEngine;
+using UnityEditor;
+using OpenPose;
+
+[InitializeOnLoad]
+[ExecuteInEditMode]
+public class AutoChaAniUserScript : MonoBehaviour
+{
+    private bool ContollerOpenUpdate = true;
+    // Output
+    private OPDatum datum;
+
+    // OpenPose settings
+    public ProducerType inputType = ProducerType.ImageDirectory;
+    public static string producerString = null;
+    public static string folderSaveKeyPoints = null;
+    public static string folderSaveImage = null;
+
+    public ulong videoframeStep = 5;
+    public int maxPeople = 1;
+    public bool
+        handEnabled = false,
+        faceEnabled = false;
+    public Vector2Int
+            netResolution = new Vector2Int(-1, 368),
+            handResolution = new Vector2Int(368, 368),
+            faceResolution = new Vector2Int(368, 368);
+    public float renderThreshold = 0.05f;
+    // Number of people
+    int numberPeople = 1;
+    // Frame rate calculation
+    private int queueMaxCount = 20;
+    private Queue<float> frameTimeQueue = new Queue<float>();
+    private float avgFrameRate = 0f;
+    private int frameCounter = 0;
+    
+    
+    //public OPDatum Getdatum()
+    //{
+    //    //赌的是50s后openPose能处理完这张图片
+    //    //Invoke("Test", 50f);
+    //    if ((OPWrapper.CusOP))
+    //        //只获取单张图片的骨骼信息
+    //        OPWrapper.CusOPGetOutput(out datum);
+    //    //防止OpenPose一直开着卡死Unity
+    //    //OPWrapper.CusOnDestroy();
+    //    return datum;
+    //}
+
+    private void Update()
+    {
+        //AIDetectBoneUtils给了要检测的角色路径，这里是用flg来控制的，学会回调再来更新
+        if(producerString != null)
+        {
+            CusStart();
+            producerString = null;
+        }
+        //只能这么消耗了...
+        if (ContollerOpenUpdate && OPWrapper.OPGetOutput(out datum))
+        {
+            Debug.Log("成功获取到openpose检测的角色骨骼信息...");
+            //防止一张图片，检测多次
+            ContollerOpenUpdate = false;
+
+            MultiArray<float> keypoints = datum.poseKeypoints;
+            //立刻停止OpenPose
+            OPWrapper.CusOnDestroy();
+            AIBoneUtils.ChangeKeypoints2Bone2D(keypoints);
+        }
+
+    }
+    
+    // Start is called before the first frame update
+    public void CusStart(bool _editmode = false)
+    {
+        OPWrapper.CusStart();
+        //Register callbacks
+        OPWrapper.OPRegisterCallbacks();
+        OPWrapper.OPEnableDebug(!_editmode);
+        OPWrapper.OPEnableOutput(true);
+        OPWrapper.OPEnableImageOutput(true);
+        UserConfigureOpenPose(); 
+        OPWrapper.OPRun();
+    }
+    private void UserConfigureOpenPose()
+    {
+        OPWrapper.OPConfigurePose(
+                /* poseMode */ PoseMode.Enabled, /* netInputSize */ netResolution, /* outputSize */ null,
+                /* keypointScaleMode */ OpenPose.ScaleMode.InputResolution,
+                /* gpuNumber */ -1, /* gpuNumberStart */ 0, /* scalesNumber */ 1, /* scaleGap */ 0.25f,
+                /* renderMode */ OpenPose.RenderMode.Gpu, /* poseModel */ PoseModel.COCO_18,
+                /* blendOriginalFrame */ true, /* alphaKeypoint */ 0.6f, /* alphaHeatMap */ 0.7f,
+                /* defaultPartToRender */ 0, /* modelFolder */ null,
+                /* heatMapTypes */ HeatMapType.None, /* heatMapScaleMode */ OpenPose.ScaleMode.ZeroToOne,
+                /* addPartCandidates */ true, /* renderThreshold */ renderThreshold, /* numberPeopleMax */ maxPeople,
+                /* maximizePositives */ false, /* fpsMax fps_max */ -1.0,
+                /* protoTxtPath */ "", /* caffeModelPath */ "", /* upsamplingRatio */ 0f);
+
+        OPWrapper.OPConfigureHand(
+            /* enable */ handEnabled, /* detector */ Detector.Body, /* netInputSize */ handResolution,
+            /* scalesNumber */ 1, /* scaleRange */ 0.4f, /* renderMode */ OpenPose.RenderMode.Auto,
+            /* alphaKeypoint */ 0.6f, /* alphaHeatMap */ 0.7f, /* renderThreshold */ 0.2f);
+
+        OPWrapper.OPConfigureFace(
+            /* enable */ faceEnabled, /* detector */ Detector.Body,
+            /* netInputSize */ faceResolution, /* renderMode */ OpenPose.RenderMode.Auto,
+            /* alphaKeypoint */ 0.6f, /* alphaHeatMap */ 0.7f, /* renderThreshold */ 0.4f);
+
+        OPWrapper.OPConfigureExtra(
+            /* reconstruct3d */ false, /* minViews3d */ -1, /* identification */ false, /* tracking */ -1,
+            /* ikThreads */ 0);
+
+        OPWrapper.OPConfigureInput(
+            /* producerType */ inputType, /* producerString */ producerString,
+            /* frameFirst */ 0, /* frameStep */ videoframeStep, /* frameLast */ ulong.MaxValue,
+            /* realTimeProcessing */ false, /* frameFlip */ false,
+            /* frameRotate */ 0, /* framesRepeat */ false,
+            /* cameraResolution */ null, /* cameraParameterPath */ null,
+            /* undistortImage */ false, /* numberViews */ -1);
+
+        OPWrapper.OPConfigureOutput(
+            /* verbose */ -1.0, /* writeKeypoint */ folderSaveKeyPoints, /* writeKeypointFormat */ DataFormat.Json,
+            /* writeJson */ "", /* writeCocoJson */ "", /* writeCocoJsonVariants */ 1,
+            /* writeCocoJsonVariant */ 1, /* writeImages */ folderSaveImage, /* writeImagesFormat */ "png",
+            /* writeVideo */ "", /* writeVideoFps */ -1.0, /* writeVideoWithAudio */ false,
+            /* writeHeatMaps */ "", /* writeHeatMapsFormat */ "png", /* writeVideo3D */ "",
+            /* writeVideoAdam */ "", /* writeBvh */ "", /* udpHost */ "", /* udpPort */ "8051");
+
+        OPWrapper.OPConfigureGui(
+            /* displayMode */ DisplayMode.NoDisplay, /* guiVerbose */ true, /* fullScreen */ false);
+
+        OPWrapper.OPConfigureDebugging(
+            /* loggingLevel */ Priority.High, /* disableMultiThread */ false, /* profileSpeed */ 1000);
+    }
+}
