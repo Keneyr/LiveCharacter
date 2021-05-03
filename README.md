@@ -12,7 +12,7 @@ A Live2D Character Animation System Developed Under Unity Framework
 
 此系统将由[Oxine](https://github.com/oxine)和[Keneyr](https://github.com/Keneyr)协作完成
 
-由于文件大小限制，以下两个路径下的文件没有上传：
+由于文件大小限制，以下两个路径下的文件没有上传(读者请于OpenPose官方github处下载)：
 
 LiveCharacter\Truck\Assets\StreamingAssets\models
 ![models](Tutorials/models.png)
