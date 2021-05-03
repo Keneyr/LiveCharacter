@@ -12,6 +12,10 @@ A Live2D Character Animation System Developed Under Unity Framework
 
 此系统将由于[Oxine](https://github.com/oxine)和[Keneyr](https://github.com/Keneyr)协作完成
 
+## 开发环境
+
+Win10/Unity2018.3.3f1
+
 ## 预备知识
 
 OpenPose人体姿态识别
