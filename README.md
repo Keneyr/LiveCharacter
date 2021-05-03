@@ -12,6 +12,14 @@ A Live2D Character Animation System Developed Under Unity Framework
 
 此系统将由[Oxine](https://github.com/oxine)和[Keneyr](https://github.com/Keneyr)协作完成
 
+由于文件大小限制，以下两个路径下的文件没有上传：
+
+LiveCharacter\Truck\Assets\StreamingAssets\models
+![models](Tutorials/models.png)
+
+LiveCharacter\Truck\Assets\OpenPose\Plugins
+![dlls](Tutorials/dlls.png)
+
 ## 开发环境
 
 Win10/Unity2018.3.3f1
