@@ -49,3 +49,29 @@ Game视图下像素分辨率：1024 * 768
 
 
 ## 系统使用说明
+
+
+## 参考文献
+
+Cao Z, Simon T, Wei S E, et al. Realtime multi-person 2d pose estimation using part affinity 
+fields[C]//Proceedings of the IEEE conference on computer vision and pattern recognition. 2017: 
+7291-7299.
+
+Li, Jing, et al. "Brief introduction of back propagation (BP) neural network algorithm and its 
+improvement." Advances in computer science and information engineering. Springer, Berlin, 
+Heidelberg, 2012. 553-558.
+
+Suzuki S. Topological structural analysis of digitized binary images by border following[J]. 
+Computer vision, graphics, and image processing, 1985, 30(1): 32-46.
+
+Douglas D H, Peucker T K. Algorithms for the reduction of the number of points required to represent 
+a digitized line or its caricature[J]. Cartographica: the international journal for geographic information
+and geovisualization, 1973, 10(2): 112-122.
+
+Dwyer, Rex A. "A faster divide-and-conquer algorithm for constructing Delaunay 
+triangulations." Algorithmica 2.1 (1987): 137-151.
+
+Jacobson, Alec, et al. "Bounded biharmonic weights for real-time deformation." ACM Trans. 
+Graph. 30.4 (2011): 78.
+
+
