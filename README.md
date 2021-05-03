@@ -10,7 +10,7 @@ A Live2D Character Animation System Developed Under Unity Framework
 
 原打算用C++开发，但限于时间及各种原因，还是决定用Unity下的C#来快速开发一个Demo出来
 
-此系统将由于[Oxine](https://github.com/oxine)和[Keneyr](https://github.com/Keneyr)协作完成
+此系统将由[Oxine](https://github.com/oxine)和[Keneyr](https://github.com/Keneyr)协作完成
 
 ## 开发环境
 
