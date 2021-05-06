@@ -86,5 +86,6 @@ public class URLVideoPlayerController : Singleton<URLVideoPlayerController>
         //videoPlayer.time = value * videoPlayer.clip.length;
         SetCurrentVideoTime();
         VideoButtonController.instance.ShowVideoTime(videoTime);
+        rawImage.texture = videoPlayer.texture; //渲染视频到UGUI上--不知道是不是当前帧对应的画面
     }
 }
