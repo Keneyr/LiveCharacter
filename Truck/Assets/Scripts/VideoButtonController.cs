@@ -130,10 +130,7 @@ public class VideoButtonController : Singleton<VideoButtonController>
     {
         URLVideoPlayerController.instance.SetVideoTimeIndexChange(value);
     }
-    void VideoIndexChange(int frameindex)
-    {
-        URLVideoPlayerController.instance.ShowIndexdVideo(frameindex);
-    }
+ 
     //因为帧索引从0起步
     public void ShowTotalFrames(ulong totalframe)
     {
