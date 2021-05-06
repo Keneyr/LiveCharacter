@@ -1173,6 +1173,8 @@ GameObject:
   - component: {fileID: 196583240}
   - component: {fileID: 196583242}
   - component: {fileID: 196583241}
+  - component: {fileID: 196583244}
+  - component: {fileID: 196583243}
   m_Layer: 5
   m_Name: RawImage_Video
   m_TagString: Untagged
@@ -1234,6 +1236,52 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 196583239}
   m_CullTransparentMesh: 0
+--- !u!114 &196583243
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 196583239}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1df3c6b629b40384cabc05c141b82421, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!328 &196583244
+VideoPlayer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 196583239}
+  m_Enabled: 1
+  m_VideoClip: {fileID: 0}
+  m_TargetCameraAlpha: 1
+  m_TargetCamera3DLayout: 0
+  m_TargetCamera: {fileID: 0}
+  m_TargetTexture: {fileID: 0}
+  m_TimeReference: 0
+  m_TargetMaterialRenderer: {fileID: 0}
+  m_TargetMaterialProperty: _MainTex
+  m_RenderMode: 2
+  m_AspectRatio: 2
+  m_DataSource: 1
+  m_PlaybackSpeed: 1
+  m_AudioOutputMode: 2
+  m_TargetAudioSources:
+  - {fileID: 0}
+  m_DirectAudioVolumes:
+  - 1
+  m_Url: 
+  m_EnabledAudioTracks: 01
+  m_DirectAudioMutes: 00
+  m_ControlledAudioTrackCount: 1
+  m_PlayOnAwake: 0
+  m_SkipOnDrop: 1
+  m_Looping: 0
+  m_WaitForFirstFrame: 1
+  m_FrameReadyEventEnabled: 0
 --- !u!1 &198367939
 GameObject:
   m_ObjectHideFlags: 0
@@ -4490,6 +4538,7 @@ GameObject:
   - component: {fileID: 1003268152}
   - component: {fileID: 1003268151}
   - component: {fileID: 1003268153}
+  - component: {fileID: 1003268154}
   m_Layer: 5
   m_Name: ControlPanel
   m_TagString: Untagged
@@ -4580,6 +4629,25 @@ MonoBehaviour:
   m_ChildForceExpandHeight: 1
   m_ChildControlWidth: 0
   m_ChildControlHeight: 0
+--- !u!114 &1003268154
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1003268149}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2d17b5bfb04e27246b84e2bd14ff3d9b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  sliderStartFrame: {fileID: 1896500106}
+  inputStartFrame: {fileID: 2002277536}
+  sliderEndFrame: {fileID: 1878760744}
+  inputEndFrame: {fileID: 692677245}
+  sliderInterval: {fileID: 1806104256}
+  inputInterval: {fileID: 1990557600}
+  textTotalFrame: {fileID: 179925421}
 --- !u!1 &1006357283
 GameObject:
   m_ObjectHideFlags: 0
@@ -9062,11 +9130,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: '> Console
-
-    > Welcome To Character2D
-
-    > -h for Help'
+  m_Text: 
 --- !u!222 &2090697295
 CanvasRenderer:
   m_ObjectHideFlags: 0

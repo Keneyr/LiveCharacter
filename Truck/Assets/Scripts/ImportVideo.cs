@@ -64,8 +64,9 @@ public class ImportVideo : MonoBehaviour
         pth.flags = 0x00080000 | 0x00001000 | 0x00000800 | 0x00000200 | 0x00000008;
         if (BaseFileDialog.GetOpenFileName(pth))
         {
-            string filepath = pth.file;//选择的文件路径;
-            instance.ShowMesssage(filepath);
+            string filepath = pth.file; //选择的文件路径;
+            ConsoleController.instance.ShowMessage(filepath);
+            URLVideoPlayerController.instance.ShowVideo(filepath); //渲染原视频到幕布上
         }
     }
 

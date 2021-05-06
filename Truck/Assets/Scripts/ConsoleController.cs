@@ -13,16 +13,15 @@ public class ConsoleController : Singleton<ConsoleController>
     [Tooltip("控制台输出框对象")]
     private Text outputText = null;
 
-    //public static ConsoleController consoleController;
-
     private void Awake()
     {
-        //instance = this;
+        outputText.text =
+            "> Welcome To LiveCharacter2D \n";
     }
-
-    public void ShowMessages(string message)
+    
+    public void ShowMessage(string message)
     {
         UnityEngine.Debug.Log(message);
-        outputText.text +="> " + message + "\n";
+        outputText.text += "> " + message + "\n";
     }
 }
