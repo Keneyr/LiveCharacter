@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0.37311953, g: 0.38074014, b: 0.3587274, a: 1}
+  m_IndirectSpecularColor: {r: 0.37311918, g: 0.3807398, b: 0.35872716, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -2442,6 +2442,7 @@ GameObject:
   - component: {fileID: 525703770}
   - component: {fileID: 525703772}
   - component: {fileID: 525703771}
+  - component: {fileID: 525703773}
   m_Layer: 5
   m_Name: Console
   m_TagString: Untagged
@@ -2506,6 +2507,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 525703769}
   m_CullTransparentMesh: 0
+--- !u!114 &525703773
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 525703769}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 990a2239a23eeff498d5f4ba13f430e8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  outputText: {fileID: 2090697294}
 --- !u!1 &547608608
 GameObject:
   m_ObjectHideFlags: 0
@@ -3806,6 +3820,7 @@ GameObject:
   - component: {fileID: 773966990}
   - component: {fileID: 773966989}
   - component: {fileID: 773966991}
+  - component: {fileID: 773966992}
   m_Layer: 5
   m_Name: BtnImportVideo
   m_TagString: Untagged
@@ -3910,8 +3925,8 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1843235091}
-        m_MethodName: OnClick
+      - m_Target: {fileID: 773966992}
+        m_MethodName: OpenFile
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -3923,6 +3938,18 @@ MonoBehaviour:
         m_CallState: 2
     m_TypeName: UnityEngine.UI.Button+ButtonClickedEvent, UnityEngine.UI, Version=1.0.0.0,
       Culture=neutral, PublicKeyToken=null
+--- !u!114 &773966992
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 773966987}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4f046af09dea864eaee56786b2092d9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &785567359
 GameObject:
   m_ObjectHideFlags: 0
@@ -7466,7 +7493,6 @@ GameObject:
   - component: {fileID: 1843235089}
   - component: {fileID: 1843235088}
   - component: {fileID: 1843235087}
-  - component: {fileID: 1843235091}
   m_Layer: 5
   m_Name: Canvas
   m_TagString: Untagged
@@ -7557,18 +7583,6 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 0}
---- !u!114 &1843235091
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1843235086}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f4f046af09dea864eaee56786b2092d9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &1870238669
 GameObject:
   m_ObjectHideFlags: 0

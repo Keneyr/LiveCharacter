@@ -8,8 +8,6 @@ using UnityEngine.UI;
 public class ImportVideo : MonoBehaviour
 {
     // Start is called before the first frame update
-
-
     // Update is called once per frame
     void Update()
     {
@@ -21,8 +19,8 @@ public class ImportVideo : MonoBehaviour
     void Start()
     {
         //鼠标点击按钮事件
-        Open = GameObject.Find("Open").GetComponent<Button>();
-        Open.onClick.AddListener(OnClick);
+        //Open = GameObject.Find("BtnImportVideo").GetComponent<Button>();
+        //Open.onClick.AddListener(OnClick);
     }
 
 
@@ -51,10 +49,30 @@ public class ImportVideo : MonoBehaviour
 
         return result;
     }
+    public void OpenFile()
+    {
+        OpenFileDlg pth = new OpenFileDlg();
+        pth.structSize = System.Runtime.InteropServices.Marshal.SizeOf(pth);
+        pth.filter = "mp4 (*.mp4)";
+        pth.file = new string(new char[256]);
+        pth.maxFile = pth.file.Length;
+        pth.fileTitle = new string(new char[64]);
+        pth.maxFileTitle = pth.fileTitle.Length;
+        pth.initialDir = Application.dataPath;  // default path  
+        pth.title = "打开视频文件";
+        pth.defExt = "mp4";
+        pth.flags = 0x00080000 | 0x00001000 | 0x00000800 | 0x00000200 | 0x00000008;
+        if (BaseFileDialog.GetOpenFileName(pth))
+        {
+            string filepath = pth.file;//选择的文件路径;
+            instance.ShowMesssage(filepath);
+        }
+    }
 
     public void OnClick()
     {
-        ShowInExplorer("C:/");
+        //ShowInExplorer("C:/");
+        OpenFile();
     }
 
 }
