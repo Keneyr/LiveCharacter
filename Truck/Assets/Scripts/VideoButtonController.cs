@@ -24,12 +24,14 @@ public class VideoButtonController : Singleton<VideoButtonController>
 
     public Text textTotalFrame;
     //private int totalFrames;
-    
+
+    public Text textCurrentTime;
 
     private void Awake()
     {
-
+        base.Awake();
     }
+   
     /// <summary>
     /// 监听，让slider和inputfield相互控制
     /// </summary>
@@ -67,6 +69,8 @@ public class VideoButtonController : Singleton<VideoButtonController>
         if (!IsSelectingSlider())
             return;
         inputStartFrame.text = value.ToString();
+        //更新视频播放时间及视频帧画面
+        SetVideoTimeIndexChange(value);
     }
     void SliderEndChange(float value)
     {
@@ -121,14 +125,31 @@ public class VideoButtonController : Singleton<VideoButtonController>
         }
 
     }
+    //根据用户开始帧索引显示视频帧画面--相当于是可拖动的进度条
+    void SetVideoTimeIndexChange(float value)
+    {
+        URLVideoPlayerController.instance.SetVideoTimeIndexChange(value);
+    }
+    void VideoIndexChange(int frameindex)
+    {
+        URLVideoPlayerController.instance.ShowIndexdVideo(frameindex);
+    }
     //因为帧索引从0起步
     public void ShowTotalFrames(ulong totalframe)
     {
+        string message = "视频总帧数：" + totalframe.ToString();
+        ConsoleController.instance.ShowMessage(message);
+
         textTotalFrame.text = totalframe.ToString();
         sliderStartFrame.maxValue = totalframe - 1;
         sliderEndFrame.maxValue = totalframe - 1;
         sliderInterval.maxValue = totalframe - 1;
     }
+    public void ShowVideoTime(VideoTime videoTime)
+    {
+        textCurrentTime.text = string.Format("{0:D2}:{1:D2}:{2:D2} / {3:D2}:{4:D2}:{5:D2}",
+            videoTime.currentHour, videoTime.currentMinute, videoTime.currentSecond, videoTime.clipHour, videoTime.clipMinute, videoTime.clipSecond);
+    }
 
-    
+
 }

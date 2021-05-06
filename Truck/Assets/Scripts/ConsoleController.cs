@@ -13,8 +13,9 @@ public class ConsoleController : Singleton<ConsoleController>
     [Tooltip("控制台输出框对象")]
     private Text outputText = null;
 
-    private void Awake()
+    protected void Awake()
     {
+        base.Awake();
         outputText.text =
             "> Welcome To LiveCharacter2D \n";
     }
