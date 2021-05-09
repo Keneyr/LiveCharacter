@@ -128,7 +128,8 @@ public class VideoButtonController : Singleton<VideoButtonController>
     //根据用户开始帧索引显示视频帧画面--相当于是可拖动的进度条
     void SetVideoTimeIndexChange(float value)
     {
-        URLVideoPlayerController.instance.SetVideoTimeIndexChange(value);
+        //URLVideoPlayerController.instance.SetVideoTimeIndexChange(value);
+        AVProVideoController.instance.SetVideoTimeIndexChange(value);
     }
  
     //因为帧索引从0起步
@@ -142,10 +143,10 @@ public class VideoButtonController : Singleton<VideoButtonController>
         sliderEndFrame.maxValue = totalframe - 1;
         sliderInterval.maxValue = totalframe - 1;
     }
-    public void ShowVideoTime(VideoTime videoTime)
+    public void ShowVideoTime(AVVideoTime videoTime)
     {
-        textCurrentTime.text = string.Format("{0:D2}:{1:D2}:{2:D2} / {3:D2}:{4:D2}:{5:D2}",
-            videoTime.currentHour, videoTime.currentMinute, videoTime.currentSecond, videoTime.clipHour, videoTime.clipMinute, videoTime.clipSecond);
+        textCurrentTime.text = string.Format("{0:D2}:{1:D2} / {2:D2}:{3:D2}",
+            videoTime.currentMinute, videoTime.currentSecond, videoTime.clipMinute, videoTime.clipSecond);
     }
 
 

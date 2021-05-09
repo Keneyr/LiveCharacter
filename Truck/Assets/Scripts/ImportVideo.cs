@@ -68,7 +68,8 @@ public class ImportVideo : MonoBehaviour
             ConsoleController.instance.ShowMessage(filepath);
             //将路径中\转化为/
             filepath = filepath.Replace("\\","/");
-            URLVideoPlayerController.instance.ShowVideo(filepath); //渲染原视频到幕布上
+            //URLVideoPlayerController.instance.ShowVideo(filepath); //渲染原视频到幕布上
+            AVProVideoController.instance.LoadVideo(filepath);
         }
     }
 

@@ -54,7 +54,7 @@ Canvas下的Button/Image等组件作为渲染桥梁
 
 内部即刻运行OpenPose算法，对视频数据每帧检测，保存渲染好的视频帧图像到本地，根据用户选择的初始帧及帧间隔进行可视化(方便用户交互快速反应，实时计算大概率延迟较高)
 
-使用Unity自带的Video Player将视频原始数据渲染至Canvas上
+使用Unity自带的Video Player将视频原始数据渲染至Canvas上（由于Unity自带的组件不好用，所以改为AVProVideo插件，参考该[博客教程](https://www.cnblogs.com/mrmocha/p/8087389.html)）
 
 2、导入角色图像并显示
 
