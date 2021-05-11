@@ -9,6 +9,7 @@ using UnityEngine.UI;
 /// </summary>
 public class AVVideoTime
 {
+    public AVVideoTime() { }
     //public int currentHour;
     public int currentMinute;
     public int currentSecond;
@@ -17,6 +18,7 @@ public class AVVideoTime
     public int clipMinute;
     public int clipSecond;
 
+    public int totalFrame = 0;
     public void Init(int a,int b,int c,int d)
     {
         currentMinute = a;
@@ -30,8 +32,8 @@ public class AVProVideoController : Singleton<AVProVideoController>
 {
 
     public MediaPlayer mediaPlayer; //持有控制视频播放的组件
-    private AVVideoTime avvideoTime;
-
+    private AVVideoTime avvideoTime = new AVVideoTime();
+    
     void Awake()
     {
         base.Awake();
@@ -43,8 +45,23 @@ public class AVProVideoController : Singleton<AVProVideoController>
         //通过插件中的方法加载（1.加载路径格式（与面板上相对应）2.加载的文件名 3.默认是否开始播放）
         mediaPlayer.OpenVideoFromFile(
             MediaPlayer.FileLocation.AbsolutePathOrURL,
-            videoPath, false);
+            videoPath, false); 
     }
+
+    void InitVideoParams()
+    {
+        int totalFrame = GetTotalFrame() - 1;
+        VideoSliderController.instance.sliderEndFrame.maxValue = totalFrame;
+        VideoSliderController.instance.sliderStartFrame.maxValue = totalFrame;
+        VideoSliderController.instance.sliderInterval.maxValue = totalFrame;
+
+        VideoSliderController.instance.sliderEndFrame.value = 0;
+        VideoSliderController.instance.sliderStartFrame.value = 0;
+        VideoSliderController.instance.sliderInterval.value = totalFrame>2?2:0;
+        
+
+    }
+
     //视频播放时间触发
     private void MediaEventHandler(MediaPlayer arg0, MediaPlayerEvent.EventType arg1, ErrorCode arg2)
     {
@@ -61,6 +78,8 @@ public class AVProVideoController : Singleton<AVProVideoController>
                 break;
             case MediaPlayerEvent.EventType.FirstFrameReady:
                 ConsoleController.instance.ShowMessage("准备完成");
+                InitVideoParams();
+                UpdateTimeText();
                 break;
             case MediaPlayerEvent.EventType.MetaDataReady:
                 ConsoleController.instance.ShowMessage("媒体数据准备中");
@@ -76,6 +95,7 @@ public class AVProVideoController : Singleton<AVProVideoController>
                 break;
         }
     }
+    
     //更新播放进度的时间显示
     void UpdateTimeText()
     {
@@ -96,16 +116,32 @@ public class AVProVideoController : Singleton<AVProVideoController>
         tVideoTimeSeconds = tVideoTimeSeconds % 60;
 
         avvideoTime.Init(tCurrentMin, tCurrentSeconds, tVideoTimeMin, tVideoTimeSeconds);
-        VideoButtonController.instance.ShowVideoTime(avvideoTime);
+        avvideoTime.totalFrame = GetTotalFrame();
+        VideoSliderController.instance.ShowVideoTime(avvideoTime);
+        
     }
+
+    public int GetTotalFrame()
+    {
+        return Helper.ConvertTimeSecondsToFrame(mediaPlayer.Info.GetDurationMs() / 1000.0f, 30);
+    }
+
+    public int GetCurFrame()
+    {
+        return Helper.ConvertTimeSecondsToFrame(mediaPlayer.Control.GetCurrentTimeMs() / 1000.0f, 30);
+    }
+
+    
+
     public void SetVideoTimeIndexChange(float value)
     {
         //获取视频总长度
         float tVideoTime = mediaPlayer.Info.GetDurationMs();
         //当前视频时间
-        float tCurrentTime = value * tVideoTime;
+        float tCurrentTime = value * tVideoTime / GetTotalFrame();
         //将视频调到对应的节点
         mediaPlayer.Control.Seek(tCurrentTime);
+        UpdateTimeText();
     }
 
 }

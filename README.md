@@ -58,10 +58,14 @@ Canvas下的Button/Image等组件作为渲染桥梁
 
 2、导入角色图像并显示
 
-类似Video导入，原像素进行算法处理，可视化适当缩放
+原像素进行算法处理，可视化适当缩放，支持png、jpg、psd格式
 
 3、实时控制台输出--Debug.Log()到Editor编辑器，同时也实时滚动输出到系统界面
 
+## TODO
+
+file dlg filter 打开文件过滤机制偶现bug
+debug log 封装后输出程序定位
 
 
 ## 系统使用说明
