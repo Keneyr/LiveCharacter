@@ -9,6 +9,7 @@ public class CharacterManager : Singleton<CharacterManager>
     [SerializeField]
     [Tooltip("控制台输出框对象")]
     private RawImage rawImage;
+
     RectTransform rt;
 
     public Texture2D tx;
