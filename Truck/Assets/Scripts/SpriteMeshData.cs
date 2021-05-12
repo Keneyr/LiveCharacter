@@ -12,6 +12,7 @@ public class Node : ScriptableObject
     {
         Node node = ScriptableObject.CreateInstance<Node>();
         node.hideFlags = HideFlags.DontSave;
+        //Node node = new Node();
         node.index = index;
         return node;
     }
@@ -26,6 +27,7 @@ public class Edge : ScriptableObject
     public static Edge Create(Node vertex1, Node vertex2)
     {
         Edge edge = ScriptableObject.CreateInstance<Edge>();
+        //Edge edge = new Edge();
         edge.hideFlags = HideFlags.DontSave;
         edge.node1 = vertex1;
         edge.node2 = vertex2;
@@ -92,11 +94,15 @@ public struct IndexedEdge
 public class SpriteMeshData : ScriptableObject
 {
     [SerializeField]
+    string m_Name = "";
+
+    [SerializeField]
     Vector2[] m_Vertices = new Vector2[0];
 
     [SerializeField]
     IndexedEdge[] m_Edges = new IndexedEdge[0];
 
+    
     public Vector2[] vertices
     {
         get
@@ -108,6 +114,7 @@ public class SpriteMeshData : ScriptableObject
             m_Vertices = value;
         }
     }
+    
     public IndexedEdge[] edges
     {
         get
@@ -117,6 +124,17 @@ public class SpriteMeshData : ScriptableObject
         set
         {
             m_Edges = value;
+        }
+    }
+    public string name
+    {
+        get
+        {
+            return m_Name;
+        }
+        set
+        {
+            m_Name = value;
         }
     }
 }

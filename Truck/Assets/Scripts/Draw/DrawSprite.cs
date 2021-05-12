@@ -1,6 +1,10 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System;
+using System.Linq;
+using System.Collections;
+using System.Collections.Generic;
 
 public class DrawSprite
 {
@@ -32,14 +36,35 @@ public class DrawSprite
         GL.End();
         GL.PopMatrix();
     }
+
+    public static void drawDotCyan(Vector3 position)
+    {
+        
+    }
     public static void DrawEdge(SpriteMeshData spriteMeshData)
     {
-        if(spriteMeshData)
+        if(spriteMeshData.name != null)
         {
-            for(int i=0;i<spriteMeshData.vertices.Length;i++)
-            {
+            List<Node> nodes = new List<Node>();
+            List<Vector2> m_TexVertices = new List<Vector2>();
+            List<Edge> edges = new List<Edge>();
+            m_TexVertices = spriteMeshData.vertices.ToList();
+            nodes = m_TexVertices.ConvertAll(v => Node.Create(m_TexVertices.IndexOf(v)) );
+            edges = spriteMeshData.edges.ToList().ConvertAll(e=> Edge.Create(nodes[e.index1], nodes[e.index2]));
+            
 
+            for(int i=0;i<edges.Count;i++)
+            {
+                Edge edge = edges[i];
+                Vector2 position = m_TexVertices[edge.node1.index];
+                //DrawEdge(edge,1.0f);
             }
         }
+    }
+    void DrawEdge(Edge edge,float width)
+    {
+        Vector2 p1, p2;
+        //p1 = edge
+        //DrawLine()
     }
 }

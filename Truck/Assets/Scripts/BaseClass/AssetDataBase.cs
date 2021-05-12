@@ -10,9 +10,10 @@ public static class AssetDataBase
         try
         {
             if (File.Exists(Application.persistentDataPath + path))
-                Debug.LogWarning("save warning: " + "file already exists, override");
+                Console.LogWarning("save warning: " + "file already exists, override");
             // FileStream file = File.Create(Application.persistentDataPath + path);
             FileStream file = File.Open(Application.persistentDataPath + path, FileMode.Create, FileAccess.ReadWrite);
+            Console.Log("Save file to : " + Application.persistentDataPath + path);
             StreamWriter sw = new StreamWriter(file, new System.Text.UTF8Encoding(false));
             XmlSerializer serializer = new XmlSerializer(typeof(T));
             serializer.Serialize(sw, obj);
@@ -21,7 +22,7 @@ public static class AssetDataBase
         }
         catch (Exception e)
         {
-            Debug.LogError("save error：" + e.Message);
+            Console.LogError("save error：" + e.Message);
         }
     }
 
@@ -39,7 +40,7 @@ public static class AssetDataBase
         }
         catch (Exception e)
         {
-            Debug.LogError("load error：" + e.Message);
+            Console.LogError("load error：" + e.Message);
         }
         return (T)obj;
     }

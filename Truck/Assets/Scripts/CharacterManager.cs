@@ -25,9 +25,6 @@ public class CharacterManager : Singleton<CharacterManager>
         tx = new Texture2D(100,100);
         tx.LoadImage(GetImageByte(imagePath));
         tx.name = System.IO.Path.GetFileNameWithoutExtension(imagePath);
-        //AssetDatabase.CreateAsset(tx, Application.streamingAssetsPath + "/" + tx.name + ".asset");
-        //AssetDatabase.SaveAssets();
-        //AssetDatabase.Refresh();
 
         rawImage.texture = tx;
         Console.Log("image width,height is: " + tx.width + ", " + tx.height);

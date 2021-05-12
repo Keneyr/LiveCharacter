@@ -51,14 +51,14 @@ public static class Console
     {
         if (UseLog)
             Debug.Log("<color=blue>[Conosle]</color>" + info);
-        ConsoleController.ShowMessage("<color=blue>"+info+"</color>");
+        ConsoleController.ShowMessage("<color=cyan>"+info+"</color>");
 
     }
 
     public static void LogWarning(object WarningInfo)
     {
         if (UseLog)
-            Debug.LogWarning("<color=yellow>[Conosle]</color>" + WarningInfo);
+            Debug.Log("<color=yellow>[Conosle]</color>" + WarningInfo);
         ConsoleController.ShowMessage("<color=yellow>" + WarningInfo + "</color>");
     }
 

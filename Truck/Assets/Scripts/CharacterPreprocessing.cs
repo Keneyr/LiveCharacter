@@ -4,7 +4,6 @@ using UnityEngine;
 using UnityEditor.Sprites;
 using System.Linq;
 using System.Reflection;
-using UnityEditor;
 /// <summary>
 /// 对角色图像(png/jpg/psd)预处理合集，包括轮廓检测，姿态提取，三角剖分，骨骼生成，自动蒙皮，一键预处理
 /// </summary>
@@ -28,32 +27,29 @@ public static class CharacterPreprocessing
         Texture2D tx = CharacterManager.instance.tx;
         //sprite = tx as Object as Sprite;
         sprite = Sprite.Create(tx, new Rect(0, 0, tx.width, tx.height), Vector2.zero);
-        //Object _object = AssetDatabase.LoadMainAssetAtPath(AssetDatabase.GetAssetPath(tx));
-        //sprite = _object as Sprite;
 
         Vector2[] vertices;
+        IndexedEdge[] edges;
         
         if (sprite)
         {
+            //spriteMeshData = new SpriteMeshData();
             spriteMeshData = ScriptableObject.CreateInstance<SpriteMeshData>();
             spriteMeshData.name = tx.name + "_Data";
-            //spriteMeshData.hideFlags = HideFlags.HideInHierarchy;
-            string assetPath = AssetDatabase.GenerateUniqueAssetPath(Application.streamingAssetsPath + "/" + spriteMeshData.name + ".asset");
-            Console.Log("Save asset to" + assetPath);
 
-            GetSpriteContourData(sprite, out vertices);
+           
+            GetSpriteContourData(sprite, out vertices, out edges);
+
             spriteMeshData.vertices = vertices;
+            spriteMeshData.edges = edges;
 
-            AssetDatabase.CreateAsset(spriteMeshData, assetPath);
-            //创建asset资源到本地--方便其他算法共享及后续修改数据
-            //AssetDatabase.AddObjectToAsset(spriteMeshData, assetPath);
-            AssetDatabase.SaveAssets();
-            AssetDatabase.ImportAsset(assetPath);
-
+            string assetPath = "/" + spriteMeshData.name + ".asset";
+            AssetDataBase.SaveAsset<SpriteMeshData>(assetPath, spriteMeshData);
+            
             DrawSprite.DrawEdge(spriteMeshData);
         }
     }
-    private static void GetSpriteContourData(Sprite sprite, out Vector2[] vertices)
+    private static void GetSpriteContourData(Sprite sprite, out Vector2[] vertices, out IndexedEdge[] edges)
     {
         int width = 0;
         int height = 0;
@@ -68,7 +64,57 @@ public static class CharacterPreprocessing
         {
             vertices[i] = new Vector2(uvs[i].x * width, uvs[i].y * height);
         }
+        ushort[] l_indices = sprite.triangles;
+        int[] indices = new int[l_indices.Length];
+        for(int i = 0; i < l_indices.Length; ++i)
+        {
+            indices[i] = (int)l_indices[i];
+        }
+        HashSet<IndexedEdge> edgesSet = new HashSet<IndexedEdge>();
+        for (int i = 0; i < indices.Length; i += 3)
+        {
+            int index1 = indices[i];
+            int index2 = indices[i + 1];
+            int index3 = indices[i + 2];
 
+            IndexedEdge edge1 = new IndexedEdge(index1, index2);
+            IndexedEdge edge2 = new IndexedEdge(index2, index3);
+            IndexedEdge edge3 = new IndexedEdge(index1, index3);
+
+            if (edgesSet.Contains(edge1))
+            {
+                edgesSet.Remove(edge1);
+            }
+            else
+            {
+                edgesSet.Add(edge1);
+            }
+
+            if (edgesSet.Contains(edge2))
+            {
+                edgesSet.Remove(edge2);
+            }
+            else
+            {
+                edgesSet.Add(edge2);
+            }
+
+            if (edgesSet.Contains(edge3))
+            {
+                edgesSet.Remove(edge3);
+            }
+            else
+            {
+                edgesSet.Add(edge3);
+            }
+        }
+        edges = new IndexedEdge[edgesSet.Count];
+        int edgeIndex = 0;
+        foreach(IndexedEdge edge in edgesSet)
+        {
+            edges[edgeIndex] = edge;
+            ++edgeIndex;
+        }
     }
     private static void GetSpriteTextureSize(Sprite sprite, ref int width, ref int height)
     {
