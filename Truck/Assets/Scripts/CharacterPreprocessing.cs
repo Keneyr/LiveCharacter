@@ -45,8 +45,8 @@ public static class CharacterPreprocessing
 
             string assetPath = "/" + spriteMeshData.name + ".asset";
             AssetDataBase.SaveAsset<SpriteMeshData>(assetPath, spriteMeshData);
-            
-            DrawSprite.DrawEdge(spriteMeshData);
+
+            //DrawEdge.drawEdge(spriteMeshData);
         }
     }
     private static void GetSpriteContourData(Sprite sprite, out Vector2[] vertices, out IndexedEdge[] edges)
