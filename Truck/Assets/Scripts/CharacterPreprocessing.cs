@@ -1,7 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEditor.Sprites;
 using System.Linq;
 using System.Reflection;
 /// <summary>
@@ -56,8 +55,8 @@ public static class CharacterPreprocessing
 
         GetSpriteTextureSize(sprite, ref width, ref height);
 
-        Vector2[] uvs = SpriteUtility.GetSpriteUVs(sprite, false);
-
+        //Vector2[] uvs = SpriteUtility.GetSpriteUVs(sprite, false);
+        Vector2[] uvs = sprite.uv;
         vertices = new Vector2[uvs.Length];
 
         for (int i = 0; i < uvs.Length; ++i)
@@ -120,13 +119,14 @@ public static class CharacterPreprocessing
     {
         if (sprite)
         {
-            Texture2D texture = SpriteUtility.GetSpriteTexture(sprite, false);
-
+            //Texture2D texture = SpriteUtility.GetSpriteTexture(sprite, false);
+            Texture2D texture = sprite.texture;
             width = texture.width;
             height = texture.height;
         }
     }
-    
+
+#if false
     private static Vector2[][] GenerateOutline(Sprite sprite)
     {
         MethodInfo methodInfo = typeof(SpriteUtility).GetMethod("GenerateOutline", BindingFlags.Static | BindingFlags.NonPublic);
@@ -139,6 +139,8 @@ public static class CharacterPreprocessing
         }
         return paths;
     }
+#endif
+
     public static void ExtractPose()
     {
 

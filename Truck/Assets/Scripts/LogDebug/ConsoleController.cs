@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine.UI;
 using UnityEngine;
+using DG.Tweening;
 
 /// <summary>
 /// 控制台程序，控制UI输出信息
@@ -34,15 +35,7 @@ public class ConsoleController : Singleton<ConsoleController>
         if (instance.content.parent.GetComponent<RectTransform>().rect.height < textHeight) {
             print(instance.scrollbar.value);
             LayoutRebuilder.ForceRebuildLayoutImmediate(instance.scrollbar.GetComponent<RectTransform>());
-            instance.StartCoroutine("Wait");
-            instance.scrollbar.value = 0;
+            DOTween.To(() => instance.scrollbar.value = 0, v => instance.scrollbar.value = v, 0, 0.1f).SetEase(Ease.InElastic);
         }
     }
-
-    IEnumerator Wait() {
-        yield return new WaitForSeconds(1.0f);
-        instance.scrollbar.value = 0;
-    }
-
-
 }

@@ -3,9 +3,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using System;
 using System.Linq;
-using System.Collections;
-using System.Collections.Generic;
-
 
 public class DrawEdge : MonoBehaviour
 {
@@ -73,6 +70,9 @@ public class DrawEdge : MonoBehaviour
 
     public static void drawEdge(SpriteMeshData spriteMeshData)
     {
+        if (!spriteMeshData)
+            return;
+
         if(spriteMeshData.name != null)
         {
             List<Node> nodes = new List<Node>();
