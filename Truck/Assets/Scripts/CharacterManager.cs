@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEditor;
 
 public class CharacterManager : Singleton<CharacterManager>
 {
@@ -23,9 +24,14 @@ public class CharacterManager : Singleton<CharacterManager>
     {
         tx = new Texture2D(100,100);
         tx.LoadImage(GetImageByte(imagePath));
+        tx.name = System.IO.Path.GetFileNameWithoutExtension(imagePath);
+        //AssetDatabase.CreateAsset(tx, Application.streamingAssetsPath + "/" + tx.name + ".asset");
+        //AssetDatabase.SaveAssets();
+        //AssetDatabase.Refresh();
+
         rawImage.texture = tx;
         ConsoleController.instance.ShowMessage("image width,height is: " + tx.width + ", " + tx.height);
-        // screen: w 512 h 294
+        // screen: w 512 h 294 自适应显示到canvas上
         float sx = 512, sy = 294;
         float aspect= sx / sy;
         if (tx.height >= tx.width && tx.height > sy) {
