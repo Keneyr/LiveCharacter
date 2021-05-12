@@ -1,21 +1,22 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 using System.IO;
-using System.Runtime.Serialization.Formatters.Binary;
 using System;
+using System.Xml.Serialization;
 
 public static class AssetDataBase
 {
-    public static void SaveAsset(string path, object obj)
+    public static void SaveAsset<T>(string path, object obj)
     {
         try
         {
             if (File.Exists(Application.persistentDataPath + path))
                 Debug.LogWarning("save warning: " + "file already exists, override");
-            FileStream file = File.Create(Application.persistentDataPath + path);
-            BinaryFormatter formatter = new BinaryFormatter();
-            formatter.Serialize(file, obj);
+            // FileStream file = File.Create(Application.persistentDataPath + path);
+            FileStream file = File.Open(Application.persistentDataPath + path, FileMode.Create, FileAccess.ReadWrite);
+            StreamWriter sw = new StreamWriter(file, new System.Text.UTF8Encoding(false));
+            XmlSerializer serializer = new XmlSerializer(typeof(T));
+            serializer.Serialize(sw, obj);
+            sw.Close();
             file.Close();
         }
         catch (Exception e)
@@ -26,12 +27,14 @@ public static class AssetDataBase
 
     public static T LoadAsset<T>(string path)
     {
-        BinaryFormatter formatter = new BinaryFormatter();
         object obj = null;
         try
         {
             FileStream file = File.Open(Application.persistentDataPath + path, FileMode.Open, FileAccess.Read);
-            obj = formatter.Deserialize(file);
+            StreamReader sr = new StreamReader(file, true);
+            XmlSerializer serializer = new XmlSerializer(typeof(T));
+            obj = serializer.Deserialize(sr);
+            sr.Close();
             file.Close();
         }
         catch (Exception e)
