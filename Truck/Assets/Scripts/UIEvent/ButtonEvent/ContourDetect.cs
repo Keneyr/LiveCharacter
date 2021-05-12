@@ -6,7 +6,7 @@ public class ContourDetect : MonoBehaviour
 {
     public void DetectContour()
     {
-        ConsoleController.instance.ShowMessage("DetectContour...");
+        Console.Log("DetectContour...");
         CharacterPreprocessing.DetectContour();
     }
 }

@@ -6,6 +6,6 @@ public class PoseExtract : MonoBehaviour
 {
     public void ExtractPoseByOpenPose()
     {
-        ConsoleController.instance.ShowMessage("角色骨骼姿态提取中...");
+        Console.Log("角色骨骼姿态提取中...");
     }
 }

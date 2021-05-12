@@ -65,8 +65,8 @@ public class ImportVideo : MonoBehaviour
         if (BaseFileDialog.GetOpenFileName(pth))
         {
             string filepath = pth.file; //选择的文件路径;
-            ConsoleController.instance.ShowMessage("导入视频文件...");
-            ConsoleController.instance.ShowMessage(filepath);
+            Console.Log("导入视频文件...");
+            Console.Log(filepath);
             //将路径中\转化为/
             filepath = filepath.Replace("\\","/");
             //URLVideoPlayerController.instance.ShowVideo(filepath); //渲染原视频到幕布上

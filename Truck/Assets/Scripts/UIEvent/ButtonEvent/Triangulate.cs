@@ -6,6 +6,6 @@ public class Triangulate : MonoBehaviour
 {
     public void TriangulateContour()
     {
-        ConsoleController.instance.ShowMessage("角色三角剖分中...");
+        Console.Log("角色三角剖分中...");
     }
 }

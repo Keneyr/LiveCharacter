@@ -20,9 +20,10 @@ public class ConsoleController : Singleton<ConsoleController>
             "> Welcome To LiveCharacter2D \n";
     }
     
-    public void ShowMessage(object message)
+    public static void ShowMessage(object message)
     {
-        UnityEngine.Debug.Log(message);
-        outputText.text += "> " + message + "\n";
+        instance.outputText.text += "> " + message + "\n";
     }
+
+
 }

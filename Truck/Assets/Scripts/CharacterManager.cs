@@ -30,7 +30,7 @@ public class CharacterManager : Singleton<CharacterManager>
         //AssetDatabase.Refresh();
 
         rawImage.texture = tx;
-        ConsoleController.instance.ShowMessage("image width,height is: " + tx.width + ", " + tx.height);
+        Console.Log("image width,height is: " + tx.width + ", " + tx.height);
         // screen: w 512 h 294 自适应显示到canvas上
         float sx = 512, sy = 294;
         float aspect= sx / sy;

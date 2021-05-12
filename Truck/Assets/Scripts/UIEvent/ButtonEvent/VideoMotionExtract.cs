@@ -6,6 +6,6 @@ public class VideoMotionExtract : MonoBehaviour
 {
     public void ExtractVideoMotion()
     {
-        ConsoleController.instance.ShowMessage("ExtractVideoMotion...");
+        Console.Log("ExtractVideoMotion...");
     }
 }

@@ -68,27 +68,27 @@ public class AVProVideoController : Singleton<AVProVideoController>
         switch(arg1)
         {
             case MediaPlayerEvent.EventType.Closing:
-                ConsoleController.instance.ShowMessage("关闭播放器");
+                Console.Log("关闭播放器");
                 break;
             case MediaPlayerEvent.EventType.Error:
-                ConsoleController.instance.ShowMessage("播放器出错");
+                Console.LogError("播放器出错");
                 break;
             case MediaPlayerEvent.EventType.FinishedPlaying:
-                ConsoleController.instance.ShowMessage("播放完成");
+                Console.Log("播放完成");
                 break;
             case MediaPlayerEvent.EventType.FirstFrameReady:
-                ConsoleController.instance.ShowMessage("准备完成");
+                Console.Log("准备完成");
                 InitVideoParams();
                 UpdateTimeText();
                 break;
             case MediaPlayerEvent.EventType.MetaDataReady:
-                ConsoleController.instance.ShowMessage("媒体数据准备中");
+                Console.Log("媒体数据准备中");
                 break;
             case MediaPlayerEvent.EventType.ReadyToPlay:
-                ConsoleController.instance.ShowMessage("准备去播放");
+                Console.Log("准备去播放");
                 break;
             case MediaPlayerEvent.EventType.Started:
-                ConsoleController.instance.ShowMessage("开始播放");
+                Console.Log("开始播放");
                 break;
             default:
                 //ConsoleController.ShowMessage("");

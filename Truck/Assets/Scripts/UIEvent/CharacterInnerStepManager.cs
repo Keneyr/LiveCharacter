@@ -27,18 +27,18 @@ public class CharacterInnerStepManager : Singleton<CharacterInnerStepManager>
     }
     void ContourChange()
     {
-        ConsoleController.instance.ShowMessage("点击编辑轮廓点...");
+        Console.Log("点击编辑轮廓点...");
     }
     void SkeletonChange()
     {
-        ConsoleController.instance.ShowMessage("点击编辑骨骼...");
+        Console.Log("点击编辑骨骼...");
     }
     void TriangulationChange()
     {
-        ConsoleController.instance.ShowMessage("点击编辑网格...");
+        Console.Log("点击编辑网格...");
     }
     void BoneBindingChange()
     {
-        ConsoleController.instance.ShowMessage("点击编辑蒙皮...");
+        Console.Log("点击编辑蒙皮...");
     }
 }

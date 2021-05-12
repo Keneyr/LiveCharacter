@@ -39,7 +39,7 @@ public static class CharacterPreprocessing
             spriteMeshData.name = tx.name + "_Data";
             //spriteMeshData.hideFlags = HideFlags.HideInHierarchy;
             string assetPath = AssetDatabase.GenerateUniqueAssetPath(Application.streamingAssetsPath + "/" + spriteMeshData.name + ".asset");
-            ConsoleController.instance.ShowMessage("Save asset to" + assetPath);
+            Console.Log("Save asset to" + assetPath);
 
             GetSpriteContourData(sprite, out vertices);
             spriteMeshData.vertices = vertices;

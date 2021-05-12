@@ -6,6 +6,6 @@ public class BoneGenerate : MonoBehaviour
 {
     public void GenerateSkeleton()
     {
-        ConsoleController.instance.ShowMessage("角色骨架生成...");
+        Console.Log("角色骨架生成...");
     }
 }

@@ -96,7 +96,7 @@ public class VideoSliderController : Singleton<VideoSliderController>
         }
         else
         {
-            ConsoleController.instance.ShowMessage("超出最大值");
+            Console.LogWarning("超出最大值");
             sliderInterval.value = sliderInterval.maxValue;
         }
     }
@@ -110,7 +110,7 @@ public class VideoSliderController : Singleton<VideoSliderController>
         }
         else
         {
-            ConsoleController.instance.ShowMessage("超出最大值");
+            Console.LogWarning("超出最大值");
             sliderInterval.value = sliderInterval.maxValue;
         }
     }
@@ -125,7 +125,7 @@ public class VideoSliderController : Singleton<VideoSliderController>
         }
         else
         {
-            ConsoleController.instance.ShowMessage("超出最大值");
+            Console.LogWarning("超出最大值");
             sliderInterval.value = sliderInterval.maxValue;
         }
 
@@ -141,7 +141,7 @@ public class VideoSliderController : Singleton<VideoSliderController>
     public void ShowTotalFrames(ulong totalframe)
     {
         string message = "视频总帧数：" + totalframe.ToString();
-        ConsoleController.instance.ShowMessage(message);
+        Console.Log(message);
 
         textTotalFrame.text = totalframe.ToString();
         sliderStartFrame.maxValue = totalframe - 1;
