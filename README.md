@@ -26,19 +26,7 @@ Win10/Unity2018.3.3f1
 
 ## 预备知识
 
-OpenPose人体姿态识别
-
-BP神经网络分类
-
-轮廓检测
-
-网格剖分
-
-骨骼蒙皮
-
-姿态检索
-
-运动对齐
+OpenPose人体姿态识别/BP神经网络分类/轮廓检测/网格剖分/骨骼蒙皮/姿态检索/运动对齐
 
 ## 原型设计
 
@@ -54,19 +42,37 @@ Canvas下的Button/Image等组件作为渲染桥梁
 
 内部即刻运行OpenPose算法，对视频数据每帧检测，保存渲染好的视频帧图像到本地，根据用户选择的初始帧及帧间隔进行可视化(方便用户交互快速反应，实时计算大概率延迟较高)
 
-使用Unity自带的Video Player将视频原始数据渲染至Canvas上（由于Unity自带的组件不好用，所以改为AVProVideo插件，参考该[博客教程](https://www.cnblogs.com/mrmocha/p/8087389.html)）
+使用Unity自带的Video Player将视频原始数据渲染至Canvas上（由于Unity自带的组件不好用，所以改为AVProVideo插件，参考插件给的Samples及该[博客教程](https://www.cnblogs.com/mrmocha/p/8087389.html)）
 
-2、导入角色图像并显示
+2、导入角色图像并显示，原像素进行算法处理，可视化适当缩放，支持png、jpg、psd格式
 
-原像素进行算法处理，可视化适当缩放，支持png、jpg、psd格式
+方法：
 
-3、实时控制台输出--Debug.Log()到Editor编辑器，同时也实时滚动输出到系统界面
+rawImage.texture = 打开的图像
+
+3、实时控制台输出，Debug.Log()到Editor编辑器，同时也实时滚动输出到系统界面
+
+方法：
+
+封装Debug.Log()，同时控制场景中的text物体的文字内容刷新
+
+4、对角色图像进行轮廓检测和网格剖分
+
+方法：
+
+Unity源码中，texture转为sprite时，会自动进行轮廓检测和轮廓线采样及网格剖分，可从sprite相关资源中获取信息
+
+微软维护的针对C#的开源Triangulate库可用于德劳内三角网格剖分及曲面细分
+
+为方便操作，所有类我们自定义
 
 ## TODO
 
 file dlg filter 打开文件过滤机制偶现bug
+
 debug log 封装后输出程序定位
 
+runtime AssetDatabase.CreateAsset 创建asset资源（后发现创建asset资源只可以Editor模式下，随更改为在runtime模式下存储二进制文件）
 
 ## 系统使用说明
 
