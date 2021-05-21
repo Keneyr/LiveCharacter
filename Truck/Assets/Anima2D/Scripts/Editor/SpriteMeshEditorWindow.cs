@@ -285,7 +285,7 @@ namespace Anima2D
             //画出来轮廓线
 			EdgesGUI(disableEditGeometry);
             //画出来轮廓线上的离散点
-			//VerticesGUI(disableEditGeometry);
+			VerticesGUI(disableEditGeometry);
 			
 			if(m_SpriteMeshCache.mode == Mode.Mesh)
 			{
@@ -1186,7 +1186,7 @@ namespace Anima2D
 			
 			if(showTriangles)
 			{
-				//DrawTriangles();
+				DrawTriangles();
 			}
 		}
 		

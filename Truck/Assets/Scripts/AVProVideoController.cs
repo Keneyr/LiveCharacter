@@ -33,6 +33,7 @@ public class AVProVideoController : Singleton<AVProVideoController>
 
     public MediaPlayer mediaPlayer; //持有控制视频播放的组件
     private AVVideoTime avvideoTime = new AVVideoTime();
+    public string videoPath = null;
     
     void Awake()
     {
@@ -40,12 +41,13 @@ public class AVProVideoController : Singleton<AVProVideoController>
         mediaPlayer.Events.AddListener(MediaEventHandler);
     }
     //加载视频
-    public void LoadVideo(string videoPath)
+    public void LoadVideo(string _videoPath)
     {
+        videoPath = _videoPath;
         //通过插件中的方法加载（1.加载路径格式（与面板上相对应）2.加载的文件名 3.默认是否开始播放）
         mediaPlayer.OpenVideoFromFile(
             MediaPlayer.FileLocation.AbsolutePathOrURL,
-            videoPath, false); 
+            _videoPath, false); 
     }
 
     void InitVideoParams()

@@ -5,13 +5,13 @@ using UnityEngine.UI;
 
 public class CharacterInnerStepManager : Singleton<CharacterInnerStepManager>
 {
-    public Image imageContour;
+    public RawImage imageContour;
 
-    public Image imageSkeleton;
+    public RawImage imageSkeleton;
 
-    public Image imageTriangulation;
+    public RawImage imageTriangulation;
 
-    public Image BoneBinding;
+    public RawImage BoneBinding;
 
     private void Awake()
     {

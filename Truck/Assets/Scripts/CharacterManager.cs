@@ -17,46 +17,32 @@ public class CharacterManager : Singleton<CharacterManager>
     void Awake()
     {
         base.Awake();
-        rawImage = this.rawImage;
+        //rawImage = this.rawImage;
+        rawImage = GetComponent<RawImage>();
         rt = GetComponent<RectTransform>();
     }
-    public void LoadCharacter(string imagePath)
+    public ImportCharacterResult LoadCharacter(string imagePath)
     {
+        ResetPastCharacterInfo();
+        if (string.IsNullOrEmpty(imagePath) || !File.Exists(imagePath))
+        {
+            return ImportCharacterResult.FilePathError;
+        }
+
         tx = new Texture2D(100,100);
-        tx.LoadImage(GetImageByte(imagePath));
-        tx.name = System.IO.Path.GetFileNameWithoutExtension(imagePath);
+        tx.LoadImage(Extra.GetImageByte(imagePath));
+        tx.name = imagePath; //用文件路径，OpenPose使用
 
         rawImage.texture = tx;
         Console.Log("image width,height is: " + tx.width + ", " + tx.height);
-        // screen: w 512 h 294 自适应显示到canvas上
-        float sx = 512, sy = 294;
-        float aspect= sx / sy;
-        if (tx.height >= tx.width && tx.height > sy) {
-            float ratio = tx.height / sy;
-            sx = tx.width / ratio;
-        }
-        else if (tx.width > tx.height && tx.width > sx)
-        {
-            if (tx.width < aspect * tx.height)
-            {
 
-                float ratio = tx.height / sy;
-                sx = tx.width / ratio;
-            }
-            else {
-                float ratio = tx.width / sx;
-                sy = tx.height / ratio;
-            }
-        }
-        rt.sizeDelta = new Vector2(sx, sy);
+        Extra.AutoFill(tx,rt);
+        
+        
+        return ImportCharacterResult.Success;
     }
-    //根据图片路径返回图片的字节流byte[]
-    private byte[] GetImageByte(string imagePath)
+    void ResetPastCharacterInfo()
     {
-        FileStream files = new FileStream(imagePath, FileMode.Open);
-        byte[] imgByte = new byte[files.Length];
-        files.Read(imgByte, 0, imgByte.Length);
-        files.Close();
-        return imgByte;
+        CharacterPreprocessing.ResetPastCharacterInfo();
     }
 }

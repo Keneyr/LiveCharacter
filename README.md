@@ -66,6 +66,14 @@ Unity源码中，texture转为sprite时，会自动进行轮廓检测和轮廓�
 
 为方便操作，所有类我们自定义
 
+5、对角色图像进行骨骼姿态提取，和骨架生成
+
+方法：
+
+调用OpenPose接口，存储rendered图像到本地，然后读取本地图像并渲染到rawImage上；
+
+利用OpenPose生成的json文件中的数据，生成Bone2D类型的骨骼，通过Camera的RenderTargetTexture渲染到RawImage上
+
 ## TODO
 
 file dlg filter 打开文件过滤机制偶现bug
@@ -73,6 +81,12 @@ file dlg filter 打开文件过滤机制偶现bug
 debug log 封装后输出程序定位
 
 runtime AssetDatabase.CreateAsset 创建asset资源（后发现创建asset资源只可以Editor模式下，随更改为在runtime模式下存储二进制文件）
+
+由于OpenPose给的接口，只有ImageDirectionary循环对路径下的图片处理，所以无法单独对一张图片进行处理，有待后续C++接口更新，重生成dll文件
+
+
+
+
 
 ## 系统使用说明
 

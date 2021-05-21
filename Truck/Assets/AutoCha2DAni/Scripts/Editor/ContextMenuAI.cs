@@ -13,6 +13,5 @@ public class ContextMenuAI
         {
             AIDetectBoneUtils.AIDetectBone(sprite);
         }
-        
     }
 }

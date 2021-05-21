@@ -31,9 +31,8 @@ public class ConsoleController : Singleton<ConsoleController>
         float textHeight = instance.outputText.preferredHeight;
         instance.outputText.text += "> " + message + "\n";
         instance.outputText.rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, textHeight);
-        instance.content.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, textHeight);
+       // instance.content.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, textHeight);
         if (instance.content.parent.GetComponent<RectTransform>().rect.height < textHeight) {
-            print(instance.scrollbar.value);
             LayoutRebuilder.ForceRebuildLayoutImmediate(instance.scrollbar.GetComponent<RectTransform>());
             DOTween.To(() => instance.scrollbar.value = 0, v => instance.scrollbar.value = v, 0, 0.1f).SetEase(Ease.InElastic);
         }

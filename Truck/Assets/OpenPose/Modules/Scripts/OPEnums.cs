@@ -75,6 +75,8 @@ namespace OpenPose {
         Video,
         /** A webcam frames extractor, extending the functionality of cv::VideoCapture. */
         Webcam,
+        /** 自己加的，为了能让OpenPose只操作一张图片，而不是路径下的所有图片*/
+        //Image,
         /** No type defined. Default state when no specific Producer has been picked yet. */
         None,
     }

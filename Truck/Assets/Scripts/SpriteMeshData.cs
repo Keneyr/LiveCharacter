@@ -100,9 +100,13 @@ public class SpriteMeshData : ScriptableObject
     Vector2[] m_Vertices = new Vector2[0];
 
     [SerializeField]
-    IndexedEdge[] m_Edges = new IndexedEdge[0];
+    IndexedEdge[] m_Edges = new IndexedEdge[0]; //轮廓边
 
-    
+    [SerializeField]
+    int[] m_Indices = new int[0]; //三角网格边
+
+
+
     public Vector2[] vertices
     {
         get
@@ -135,6 +139,17 @@ public class SpriteMeshData : ScriptableObject
         set
         {
             m_Name = value;
+        }
+    }
+    public int[] indices
+    {
+        get
+        {
+            return m_Indices;
+        }
+        set
+        {
+            m_Indices = value;
         }
     }
 }

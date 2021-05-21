@@ -3,14 +3,35 @@ using System.Collections.Generic;
 using UnityEngine;
 using System;
 using System.Linq;
+using UnityEngine.UI;
 
 public class DrawEdge : MonoBehaviour
 {
+    static List<Node> nodes = new List<Node>();
+    static List<Vector2> m_TexVertices = new List<Vector2>();
+    static List<Edge> edges = new List<Edge>();
+    static Camera contourCamera;
+    static float lineWidth = 0.05f;
+    static float expandScale = 1.1f;
+
     static Material wireMaterial; //方便GL绘图的材质
+    RenderTexture renderTargetTexture;
+    static RectTransform rt;
+    public static void ResetPastCharacterInfo()
+    {
+        m_TexVertices.Clear();
+        nodes.Clear();
+        edges.Clear();
+    }
 
     private void Start()
     {
         CreateLineMaterial();
+        contourCamera = GameObject.Find("ContourCamera").GetComponent<Camera>();
+        renderTargetTexture = new RenderTexture(256,256,24);
+        contourCamera.targetTexture = renderTargetTexture;
+        GetComponent<RawImage>().texture = renderTargetTexture;
+        rt = GetComponent<RectTransform>();
     }
 
     public void OnRenderObject()
@@ -18,7 +39,7 @@ public class DrawEdge : MonoBehaviour
         drawEdge(CharacterPreprocessing.spriteMeshData);
     }
 
-    static void CreateLineMaterial()
+    void CreateLineMaterial()
     {
         if(!wireMaterial)
         {
@@ -27,6 +48,9 @@ public class DrawEdge : MonoBehaviour
             Shader shader = Shader.Find("Hidden/Internal-Colored");
             wireMaterial = new Material(shader);
             wireMaterial.hideFlags = HideFlags.HideAndDontSave;
+
+            //cyan color
+            wireMaterial.SetColor("_Color", Color.cyan);
 
             // Turn on alpha blending
             wireMaterial.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
@@ -40,56 +64,53 @@ public class DrawEdge : MonoBehaviour
             wireMaterial.SetInt("_ZWrite", 0);
         }
     }
-    public static void DrawLine(Vector3 p1, Vector3 p2, Vector3 normal, float width)
-    {
-        DrawLine(p1, p2, normal, width, width);
-    }
-
-    public static void DrawLine(Vector3 p1, Vector3 p2, Vector3 normal, float widthP1, float widthP2)
-    {
-        DrawLine(p1, p2, normal, widthP1, widthP2, Color.cyan);
-    }
-
-    public static void DrawLine(Vector3 p1, Vector3 p2, Vector3 normal, float widthP1, float widthP2, Color color)
-    {
-
-        Vector3 right = Vector3.Cross(normal, p2 - p1).normalized;
-        wireMaterial.SetPass(0);
-        GL.PushMatrix();
-        GL.Begin(GL.LINES);
-        GL.Color(color);
-        GL.Vertex(p1 + right * widthP1 * 0.5f);
-        GL.Vertex(p1 - right * widthP1 * 0.5f);
-        GL.Vertex(p2 - right * widthP2 * 0.5f);
-        GL.Vertex(p1 + right * widthP1 * 0.5f);
-        GL.Vertex(p2 - right * widthP2 * 0.5f);
-        GL.Vertex(p2 + right * widthP2 * 0.5f);
-        GL.End();
-        GL.PopMatrix();
-    }
-
-    public static void drawEdge(SpriteMeshData spriteMeshData)
+    
+    
+    static void drawEdge(SpriteMeshData spriteMeshData)
     {
         if (!spriteMeshData)
             return;
-
-        if(spriteMeshData.name != null)
+        if (edges.Count == 0)
+            return;
+        
+        //Sprite sprite = Sprite.Create(tx, new Rect(0, 0, tx.width, tx.height), Vector2.zero);
+        //instance.GetComponent<Image>().sprite = sprite;
+        
+        //InitEdges(spriteMeshData);
+        for (int i=0;i<edges.Count;i++)
         {
-            List<Node> nodes = new List<Node>();
-            List<Vector2> m_TexVertices = new List<Vector2>();
-            List<Edge> edges = new List<Edge>();
-            m_TexVertices = spriteMeshData.vertices.ToList();
-            nodes = m_TexVertices.ConvertAll(v => Node.Create(m_TexVertices.IndexOf(v)) );
-            edges = spriteMeshData.edges.ToList().ConvertAll(e=> Edge.Create(nodes[e.index1], nodes[e.index2]));
-            
-
-            for(int i=0;i<edges.Count;i++)
-            {
-                Edge edge = edges[i];
-                Vector2 position1 = m_TexVertices[edge.node1.index];
-                Vector2 position2 = m_TexVertices[edge.node2.index];
-                DrawLine(position1, position2, Vector3.forward, 1.0f);
-            }
+            Edge edge = edges[i];
+            Vector2 position1 = m_TexVertices[edge.node1.index];
+            Vector2 position2 = m_TexVertices[edge.node2.index];
+            Extra.DrawLine(position1, position2, Vector3.forward, lineWidth, wireMaterial);
         }
+        
+    }
+
+    //Called when DetectContour() in CharacterPreprocessing.cs return with a Success
+    public static void InitEdges(SpriteMeshData spriteMeshData)
+    {
+        //clear cache
+        m_TexVertices.Clear();
+        nodes.Clear();
+        edges.Clear();
+        //calculate rect
+        Rect rect = new Rect();
+        for (int i = 0; i < spriteMeshData.vertices.Length; i++)
+        {
+            spriteMeshData.vertices[i] /= 100.0f;
+            rect.yMax = Mathf.Max(rect.yMax, spriteMeshData.vertices[i].y);
+            rect.xMax = Mathf.Max(rect.xMax, spriteMeshData.vertices[i].x);
+            rect.yMin = Mathf.Min(rect.yMin, spriteMeshData.vertices[i].y);
+            rect.xMin = Mathf.Min(rect.xMin, spriteMeshData.vertices[i].x);
+        }
+        //Init data
+        m_TexVertices = spriteMeshData.vertices.ToList();
+        nodes = m_TexVertices.ConvertAll(v => Node.Create(m_TexVertices.IndexOf(v)));
+        edges = spriteMeshData.edges.ToList().ConvertAll(e => Edge.Create(nodes[e.index1], nodes[e.index2]));
+        //set camera
+        Extra.SetInnerCamera(contourCamera, rect, rt, expandScale);
+        
+        lineWidth = rect.height*0.01f;
     }
 }
