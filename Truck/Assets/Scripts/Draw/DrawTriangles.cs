@@ -17,7 +17,7 @@ public class DrawTriangles : MonoBehaviour
     static Material meshMaterial;
     static Material outlineMaterial;
     RenderTexture renderTargetTexture;
-    static float layer = -1;
+    static float layer = 1;
 
     static RectTransform rt;
     private void Start()
@@ -73,7 +73,7 @@ public class DrawTriangles : MonoBehaviour
             outlineMaterial.hideFlags = HideFlags.HideAndDontSave;
 
             //cyan color
-            outlineMaterial.SetColor("_Color", Color.cyan);
+            outlineMaterial.SetColor("_Color", Color.white);
 
             // Turn on alpha blending
             outlineMaterial.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
@@ -103,13 +103,13 @@ public class DrawTriangles : MonoBehaviour
             Vector3 v2 = new Vector3(points[index1].x, points[index1].y, layer);
             Vector3 v3 = new Vector3(points[index2].x, points[index2].y, layer);
 
-            Extra.DrawLine(v1,v2, Vector3.forward, lineWidth, meshMaterial);
-            Extra.DrawLine(v2,v3, Vector3.forward, lineWidth, meshMaterial);
-            Extra.DrawLine(v1,v3, Vector3.forward, lineWidth, meshMaterial);
+            Extra.DrawLine(v1,v2, Vector3.forward, lineWidth, Color.black,meshMaterial);
+            Extra.DrawLine(v2,v3, Vector3.forward, lineWidth, Color.black, meshMaterial);
+            Extra.DrawLine(v1,v3, Vector3.forward, lineWidth, Color.black, meshMaterial);
         }
         for(int i=0;i< points.Count; i++)
         {
-            Extra.DrawCircle(new Vector3(points[i].x, points[i].y, layer), pointRadius, 0,outlineMaterial);
+            Extra.DrawCircle(new Vector3(points[i].x, points[i].y, layer), pointRadius, 0,Color.cyan,outlineMaterial);
         }
         DrawEdge.drawEdge(layer);
 

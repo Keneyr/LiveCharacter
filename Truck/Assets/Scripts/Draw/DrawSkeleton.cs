@@ -117,12 +117,12 @@ public class DrawSkeleton : MonoBehaviour
     {
         if (Bones.Count == 0)
             return;
-        for(int i = 0;i < Bones.Count;i++)
+        for(int i = Bones.Count-1; i >=0 ;i--)
         {
             Bone2D bone = Bones[i];
             if(bone)
             {
-                Extra.DrawBoneBody(bone, skeletonMaterial,layer) ;
+                Extra.DrawBoneBody(bone, Color.white,skeletonMaterial, layer) ;
 
                 //Color innerColor = bone.color * 0.25f;
                 //innerColor.a = bone.color.a;

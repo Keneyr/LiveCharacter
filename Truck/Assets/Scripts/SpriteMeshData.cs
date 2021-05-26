@@ -547,4 +547,10 @@ public class SpriteMeshData : ScriptableObject
             m_SharedMesh = value;
         }
     }
+
+    public Vector2 GetVertex(Node node) {
+        if(node.index>=0&&node.index<vertices.Length)
+            return vertices[node.index];
+        return Vector2.zero;
+    }
 }

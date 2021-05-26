@@ -78,7 +78,7 @@ public class DrawEdge : MonoBehaviour
             Edge edge = edges[i];
             Vector3 position1 = new Vector3(m_TexVertices[edge.node1.index].x, m_TexVertices[edge.node1.index].y,layer) ;
             Vector3 position2 = new Vector3(m_TexVertices[edge.node2.index].x, m_TexVertices[edge.node2.index].y, layer);
-            Extra.DrawLine(position1, position2, Vector3.forward, lineWidth, wireMaterial);
+            Extra.DrawLine(position1, position2, Vector3.forward, lineWidth, Color.cyan,wireMaterial);
         }
         
     }

@@ -37,10 +37,7 @@ public class CharacterPreprocessing : MonoBehaviour
         {
             if (!m_DefaultMaterial)
             {
-                GameObject go = new GameObject();
-                SpriteRenderer sr = go.AddComponent<SpriteRenderer>();
-                m_DefaultMaterial = sr.sharedMaterial;
-                GameObject.DestroyImmediate(go);
+                m_DefaultMaterial = new Material(Shader.Find("Sprites/Default"));
             }
 
             return m_DefaultMaterial;
@@ -446,7 +443,7 @@ public class CharacterPreprocessing : MonoBehaviour
         CreateSpriteMeshGameObject(); //创建SpriteMeshInstance
         BindBones(); //骨骼绑定，计算权重，自动更新skinnedMeshRenderer
         
-        DrawSkinning.InitBindingInfo();
+        DrawSkinning.InitBindingInfo(spriteMeshData);
         return BoneSkinningResult.Success;
     }
     static void CreateSpriteMeshGameObject()
@@ -474,6 +471,7 @@ public class CharacterPreprocessing : MonoBehaviour
                 bindInfo.bindPose = bone.transform.worldToLocalMatrix * spriteMeshGO.transform.localToWorldMatrix; 
                 bindInfo.boneLength = bone.localLength;
                 bindInfo.name = bone.name;
+                bindInfo.color = Extra.GetRingColor(bindPoses.Count);
                 //bindInfo.path = GetBonePath(bone);
 
                 //spriteMeshData.bindPoses spriteMeshGO.bones
@@ -483,7 +481,9 @@ public class CharacterPreprocessing : MonoBehaviour
                 }
             }
             //update spriteMeshData & spriteMeshInstance(GO)
+            List<Vector2> m_TexVertices = spriteMeshData.vertices.ToList();
             spriteMeshData.bindPoses = bindPoses.ToArray();
+         
             spriteMeshGO.bones = BonesInHierarchy;
             CalculateAutomaticWeights();
             UpdateRenderer(); //估计要放在SpriteMeshGameObject下每帧执行
@@ -512,7 +512,7 @@ public class CharacterPreprocessing : MonoBehaviour
                 }
                 skinnedMeshRenderer.sharedMesh = spriteMeshData.sharedMesh;
                 skinnedMeshRenderer.bones = spriteMeshGO.bones.ConvertAll(bone=>bone.transform).ToArray();
-                if(spriteMeshGO.bones.Count>0)
+                if (spriteMeshGO.bones.Count>0)
                 {
                     //skinnedMeshRenderer.rootBone = spriteMeshGO.bones[0].transform;
                     skinnedMeshRenderer.rootBone = null;

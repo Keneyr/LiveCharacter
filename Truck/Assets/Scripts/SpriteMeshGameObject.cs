@@ -20,7 +20,7 @@ public class SpriteMeshGameObject : MonoBehaviour
     Transform[] m_BoneTransforms; //骨骼的transform组件，每有一个transform组件，就应该对应一个Bone2D
 
     List<Bone2D> m_CachedBones = new List<Bone2D>(); //自定义的Bone2D
-
+    
     SkinnedMeshRenderer mCachedSkinnedRenderer; //要添加的组件
 
     [SerializeField]
@@ -149,6 +149,7 @@ public class SpriteMeshGameObject : MonoBehaviour
         {
             cachedSkinnedRenderer.sharedMesh = spriteMeshData.sharedMesh;
         }
+
        
     }
 

@@ -17,19 +17,19 @@ public class Extra
     //const float lineWidth = 0.05f;
     static Vector3[] s_array;
     static Vector3[] s_circleArray;
-    public static void DrawLine(Vector3 p1, Vector3 p2, Vector3 normal, float width, Material mat)
+    public static void DrawLine(Vector3 p1, Vector3 p2, Vector3 normal, float width, Color color, Material mat)
     {
-        DrawLine(p1, p2, normal, width, width, mat);
+        DrawLine(p1, p2, normal, width, width, color, mat);
     }
 
-    private static void DrawLine(Vector3 p1, Vector3 p2, Vector3 normal, float widthP1, float widthP2, Material mat)
+    private static void DrawLine(Vector3 p1, Vector3 p2, Vector3 normal, float widthP1, float widthP2, Color color, Material mat)
     {
         Vector3 right = Vector3.Cross(normal, p2 - p1).normalized;
         mat.SetPass(0);
         GL.PushMatrix();
         //GL.LoadOrtho();
         GL.Begin(4);
-        //GL.Color(color);
+        GL.Color(color);
         GL.Vertex(p1 + right * widthP1 * 0.5f);
         GL.Vertex(p1 - right * widthP1 * 0.5f);
 
@@ -164,7 +164,39 @@ public class Extra
         camera.farClipPlane = 0.1f;
         camera.nearClipPlane = -0.1f;
     }
+    static List<Color> mColors = new List<Color>();
 
+    public static Color GetRingColor(int index)
+    {
+        index = Mathf.Clamp(index, 0, index);
+        index %= mColors.Count;
+
+        return mColors[index];
+    }
+
+    static Extra()
+    {
+        float hueAngleStep = Mathf.Clamp(45f, 1f, 360f);
+        float hueLoopOffset = Mathf.Clamp(20f, 1f, 360f);
+
+        int numColors = (int)(360f / hueAngleStep) * (int)(360f / hueLoopOffset);
+
+        mColors.Capacity = numColors;
+
+        for (int i = 0; i < numColors; ++i)
+        {
+            float hueAngle = i * hueAngleStep;
+            float loops = (int)(hueAngle / 360f);
+            float hue = ((hueAngle % 360f + (loops * hueLoopOffset % 360f)) / 360f);
+
+#if UNITY_5_0_0 || UNITY_5_0 || UNITY_5_1 || UNITY_5_2
+				mColors.Add(EditorGUIUtility.HSVToRGB(hue, 1f, 1f));
+#else
+            mColors.Add(Color.HSVToRGB(hue, 1f, 1f));
+
+#endif
+        }
+    }
     public static void SetInnerCamera(Camera camera, float layer, Rect rect, RectTransform rt, float expandScale = 1.1f)
     {
         SetInnerCamera(camera,layer,rect.width, rect.height, rt, expandScale);
@@ -188,10 +220,10 @@ public class Extra
     {
         if (s_array == null)
         {
-            s_array = new Vector3[60];
+            s_array = new Vector3[12];
         }
 
-        SetDiscSectionPoints(s_array, 60, normal, from, angle);
+        SetDiscSectionPoints(s_array, 12, normal, from, angle);
         mat.SetPass(0);
 
         GL.PushMatrix();
@@ -211,7 +243,7 @@ public class Extra
     {
         DrawBoneBody(bone, bone.color,mat, layer);
     }
-    static void DrawBoneBody(Bone2D bone, Color color, Material mat,float layer)
+    public static void DrawBoneBody(Bone2D bone, Color color, Material mat,float layer)
     {
         //Handles.matrix = bone.transform.localToWorldMatrix;
         Vector3 begin = bone.globalstartPosition;
@@ -224,7 +256,11 @@ public class Extra
         Vector3 distance = position - endPosition;
         if (distance.magnitude > radius && color.a > 0f)
         {
-            DrawLine(position, endPosition, Vector3.back, 2f * radius, 0f, mat);
+            Color outline = color * 0.5f;
+            outline.a = 1;
+            DrawLine(position, endPosition, Vector3.back, 2f * radius*1.2f, 0f, outline, mat);
+            DrawLine(position, endPosition, Vector3.back, 2f * radius, 0f,color, mat);
+            DrawSolidArc(position, Vector3.back, Vector3.Cross(endPosition - position, Vector3.forward), 180f, radius*1.2f, outline, mat);
             DrawSolidArc(position, Vector3.back, Vector3.Cross(endPosition - position, Vector3.forward), 180f, radius, color, mat);
         }
     }
@@ -256,13 +292,13 @@ public class Extra
     static void DrawBoneCap(Vector3 position, float radius, Color color, Material mat)
     {
         //Handles.color = color;
-        DrawCircle(position, radius * 0.65f, mat);
+        DrawCircle(position, radius * 0.65f,color, mat);
     }
-    static void DrawCircle(Vector3 center, float radius, Material mat)
+    static void DrawCircle(Vector3 center, float radius,Color color, Material mat)
     {
-        DrawCircle(center, radius, 0f, mat);
+        DrawCircle(center, radius, 0f,color, mat);
     }
-    public static void DrawCircle(Vector3 center, float radius, float innerRadius, Material mat)
+    public static void DrawCircle(Vector3 center, float radius, float innerRadius, Color color,Material mat)
     {
         innerRadius = Mathf.Clamp01(innerRadius);
 
@@ -281,7 +317,7 @@ public class Extra
         GL.Begin(4);
         for (int i = 1; i < s_circleArray.Length; i++)
         {
-            //GL.Color(Handles.color);
+            GL.Color(color);
             GL.Vertex(center + s_circleArray[i - 1] * radius * innerRadius);
             GL.Vertex(center + s_circleArray[i - 1] * radius);
             GL.Vertex(center + s_circleArray[i] * radius);
@@ -291,6 +327,58 @@ public class Extra
         }
         GL.End();
         GL.PopMatrix();
+    }
+
+    public static void  DrawPie(Vector3 position, BoneWeight boneWeight, float pieSize, Material mat,List<Color> colors)
+    {
+        int boneIndex = boneWeight.boneIndex0;
+        float angleStart = 0f;
+        float angle = 0f;
+        float outlineScale = 1.2f;
+        Color color;
+        
+        DrawSolidArc(position, Vector3.forward, Vector3.up, 360, pieSize* outlineScale, Color.black, mat);
+        if (boneIndex >= 0)
+        {
+            angleStart = 0f;
+            angle = Mathf.Lerp(0f, 360f, boneWeight.weight0);
+            color = colors[boneWeight.boneIndex0];
+           // mat.color = color;
+            DrawSolidArc(position, Vector3.forward, Vector3.up, angle, pieSize,color,mat);
+        }
+         
+        boneIndex = boneWeight.boneIndex1;
+
+        if (boneIndex >= 0)
+        {
+            angleStart += angle;
+            angle = Mathf.Lerp(0f, 360f, boneWeight.weight1);
+            color = colors[boneWeight.boneIndex1];
+           // mat.color = color;
+            DrawSolidArc(position, Vector3.forward, Quaternion.AngleAxis(angleStart, Vector3.forward) * Vector3.up, angle,pieSize, color, mat);
+        }
+
+        boneIndex = boneWeight.boneIndex2;
+
+        if (boneIndex >= 0)
+        {
+            angleStart += angle;
+            angle = Mathf.Lerp(0f, 360f, boneWeight.weight2);
+            color = colors[boneWeight.boneIndex2];
+          //  mat.color = color;
+            DrawSolidArc(position, Vector3.forward, Quaternion.AngleAxis(angleStart, Vector3.forward) * Vector3.up, angle, pieSize, color, mat);
+        }
+
+        boneIndex = boneWeight.boneIndex3;
+
+        if (boneIndex >= 0)
+        {
+            angleStart += angle;
+            angle = Mathf.Lerp(0f, 360f, boneWeight.weight3);
+            color = colors[boneWeight.boneIndex3];
+         //   mat.color = color;
+            DrawSolidArc(position, Vector3.forward, Quaternion.AngleAxis(angleStart, Vector3.forward) * Vector3.up, angle, pieSize, color, mat);
+        }
     }
 
     public static int GetFilesCountInPath(string path, string type)
