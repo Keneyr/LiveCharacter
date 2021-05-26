@@ -30,7 +30,22 @@ public class CharacterPreprocessing : MonoBehaviour
     
     //SpriteMeshInstance
     public static SpriteMeshGameObject spriteMeshGO = null;
+    static Material m_DefaultMaterial = null;
+    public static Material defaultMaterial
+    {
+        get
+        {
+            if (!m_DefaultMaterial)
+            {
+                GameObject go = new GameObject();
+                SpriteRenderer sr = go.AddComponent<SpriteRenderer>();
+                m_DefaultMaterial = sr.sharedMaterial;
+                GameObject.DestroyImmediate(go);
+            }
 
+            return m_DefaultMaterial;
+        }
+    }
     /// <summary>
     /// 轮廓检测
     /// </summary>
@@ -443,6 +458,7 @@ public class CharacterPreprocessing : MonoBehaviour
             gameObject.transform.position = new Vector3(0,0,0);
             spriteMeshGO = gameObject.AddComponent<SpriteMeshGameObject>();
             spriteMeshGO.spriteMeshData = spriteMeshData;
+            spriteMeshGO.sharedMaterial = defaultMaterial;
             //material
         }
     }
@@ -501,6 +517,7 @@ public class CharacterPreprocessing : MonoBehaviour
                     //skinnedMeshRenderer.rootBone = spriteMeshGO.bones[0].transform;
                     skinnedMeshRenderer.rootBone = null;
                 }
+                skinnedMeshRenderer.materials[0] = spriteMeshGO.sharedMaterial;
                 
                 
             }

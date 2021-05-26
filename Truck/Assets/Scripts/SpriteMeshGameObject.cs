@@ -23,8 +23,8 @@ public class SpriteMeshGameObject : MonoBehaviour
 
     SkinnedMeshRenderer mCachedSkinnedRenderer; //要添加的组件
 
-
-
+    [SerializeField]
+    Material[] m_Materials;
 
     public SpriteMeshData spriteMeshData
     {
@@ -118,6 +118,22 @@ public class SpriteMeshGameObject : MonoBehaviour
     //    spriteMeshData.sharedMesh.vertices = spriteMeshData.vertices;
     //    spriteMesh
     //}
+
+    public Material sharedMaterial
+    {
+        get
+        {
+            if (m_Materials.Length > 0)
+            {
+                return m_Materials[0];
+            }
+            return null;
+        }
+        set
+        {
+            m_Materials = new Material[] { value };
+        }
+    }
 
     void OnWillRenderObject()
     {
