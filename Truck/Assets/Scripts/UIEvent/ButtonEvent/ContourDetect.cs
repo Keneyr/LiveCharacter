@@ -7,7 +7,6 @@ public enum ContourDetectResult {
     TextureError = 1,
     SpriteError = 2
 }
-
 public class ContourDetect : MonoBehaviour
 {
     public void DetectContour()

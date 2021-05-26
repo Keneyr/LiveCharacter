@@ -6,7 +6,7 @@ public enum VideoMotionRetrivalResult
 {
     Success = 0,
     jsonError = 1,
-
+    AlgorithmError = 2,
 }
 
 public class VideoMotionRetrival : MonoBehaviour
@@ -22,6 +22,9 @@ public class VideoMotionRetrival : MonoBehaviour
                 break;
             case VideoMotionRetrivalResult.jsonError:
                 Console.LogError("Retrieve VideoMotion jsonError");
+                break;
+            case VideoMotionRetrivalResult.AlgorithmError:
+                Console.LogError("Retrieve VideoMotion algorithmError");
                 break;
             default:
                 Console.LogError("Error:Retrieve VideoMotion end with an Unknown resultCode.");

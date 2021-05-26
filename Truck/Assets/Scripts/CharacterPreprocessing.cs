@@ -6,45 +6,35 @@ using System.Reflection;
 using System.IO;
 using System;
 using System.Text;
+using System.Diagnostics;
+using TriangleNet;
+using TriangleNet.Geometry;
+using System.Threading.Tasks;
+using System.Threading;
 /// <summary>
 /// 对角色图像(png/jpg/psd)预处理合集，包括轮廓检测，姿态提取，三角剖分，骨骼生成，自动蒙皮，一键预处理
+/// 注意：用到了UnityEditor.Sprites下的函数
 /// </summary>
-public static class CharacterPreprocessing
+public class CharacterPreprocessing : MonoBehaviour
 {
+    //spriteMeshData
     static Sprite sprite;
     public static SpriteMeshData spriteMeshData = null;
-    static Texture2D texture;
-
-    static Rect rect;
-    static float detail;
-    static float alphaTolerance;
-    static bool holeDetection;
-    static Vector2[][] paths;
-
-    static OpenPose.MultiArray<float> keypoints = new OpenPose.MultiArray<float>();
+    //static Texture2D texture;
     static string txname = null;
-
-    //static GameObject[] Skeleton = new GameObject[13];
-
+    
+    //骨骼
+    public static OpenPose.MultiArray<float> keypoints = new OpenPose.MultiArray<float>();
     public static GameObject fbone = new GameObject("Bone");
-    public static void ResetPastCharacterInfo()
-    {
-        DrawEdge.ResetPastCharacterInfo();
-        DrawSkeleton.ResetPastCharacterInfo();
-        DrawTriangles.ResetPastCharacterInfo();
-        DrawSkinning.ResetPastCharacterInfo();
-    }
-    static void Texture2Sprite()
-    {
-        Texture2D tx = CharacterManager.instance.tx;
-        //sprite = tx as Object as Sprite;
-        sprite = Sprite.Create(tx, new Rect(0, 0, tx.width, tx.height), Vector2.zero);
-    }
-    static void SaveAssetsFile()
-    {
-        string assetPath = "/" + spriteMeshData.name + ".asset";
-        AssetDataBase.SaveAsset<SpriteMeshData>(assetPath, spriteMeshData);
-    }
+    public static List<Bone2D> BonesInHierarchy = new List<Bone2D>();
+    
+    //SpriteMeshInstance
+    public static SpriteMeshGameObject spriteMeshGO = null;
+
+    /// <summary>
+    /// 轮廓检测
+    /// </summary>
+    /// <returns></returns>
     public static ContourDetectResult DetectContour()
     {
         if (CharacterManager.instance.tx == null)
@@ -54,25 +44,124 @@ public static class CharacterPreprocessing
 
         if (sprite)
         {
-            //spriteMeshData = new SpriteMeshData();
             spriteMeshData = ScriptableObject.CreateInstance<SpriteMeshData>();
-
-            Vector2[] vertices;
-            IndexedEdge[] edges;
-            GetSpriteContourData(sprite, out vertices, out edges);
+            float detail = 0.25f;
+            float alphaTolerance = 0.05f;
+            float tesselation = 0f;
+            bool holeDetection = true;
+            GenerateSpriteOutline(detail,alphaTolerance,holeDetection,tesselation,spriteMeshData);
             txname = System.IO.Path.GetFileNameWithoutExtension(CharacterManager.instance.tx.name);
             spriteMeshData.name = txname + "_Data";
-            spriteMeshData.vertices = vertices;
-            spriteMeshData.edges = edges;
+            spriteMeshData.meshname = txname;
+            
+            //UpdateSpriteMeshDataSharedMesh();
 
-            SaveAssetsFile();
+            SaveAssetsFile(spriteMeshData);
 
             DrawEdge.InitEdges(spriteMeshData);
             return ContourDetectResult.Success;
         }
         return ContourDetectResult.SpriteError;
     }
-    static void GetSpriteContourData(Sprite sprite, out Vector2[] vertices, out IndexedEdge[] edges)
+    static void GenerateSpriteOutline(float detail,float alphaTolerance,bool holeDetection,float tesselation,SpriteMeshData _spriteMeshData)
+    {
+        List<Vector2> l_texcoords;
+        List<IndexedEdge> l_indexedEdges;
+        List<int> l_indices;
+        Texture2D texture = sprite.texture;
+        List<Hole> holes = new List<Hole>();
+        InitFromOutline(texture,detail,alphaTolerance,holeDetection,
+            out l_texcoords,out l_indexedEdges,out l_indices);
+
+        
+        spriteMeshData.vertices = l_texcoords.ToArray();
+        spriteMeshData.edges = l_indexedEdges.ToArray();
+        spriteMeshData.indices = l_indices.ToArray();
+    }
+    static void InitFromOutline(Texture2D texture,float detail,float alphaTolerance,bool holeDetection,
+        out List<Vector2> vertices,out List<IndexedEdge> indexEdges,out List<int> indices)
+    {
+        vertices = new List<Vector2>();
+        indexEdges = new List<IndexedEdge>();
+        indices = new List<int>();
+
+        if(texture)
+        {
+            Rect rect = new Rect(0,0,texture.width,texture.height);
+            Vector2[][] paths = GenerateOutline(texture, rect, detail, (byte)(alphaTolerance * 255f), holeDetection);
+            int startIndex = 0;
+            for(int i=0;i<paths.Length; i++)
+            {
+                Vector2[] path = paths[i];
+                for(int j=0;j<path.Length;j++)
+                {
+                    vertices.Add(path[j] + rect.center); //+rect.center?
+                    indexEdges.Add(new IndexedEdge(startIndex + j,startIndex + ((j + 1) % path.Length)));
+                }
+                startIndex += path.Length;
+            }
+            List<Hole> holes = new List<Hole>();
+            //有了细化的轮廓点，再进行三角剖分
+            Triangulate(vertices,indexEdges,holes,ref indices);
+        }
+
+    }
+    //默认是调用SpriteUtility函数下的方法，但是这个是UnityEditor下的函数，所以要有改动
+    static Vector2[][] GenerateOutline(Texture2D texture, Rect rect, float detail, byte alphaTolerance, bool holeDetection)
+    {
+        Vector2[][] paths = null;
+
+        //GenerateOutlinePlugin.GenerateOutline(texture,rect,detail,alphaTolerance,holeDetection,paths);
+
+        MethodInfo methodInfo = typeof(UnityEditor.Sprites.SpriteUtility).GetMethod("GenerateOutline", BindingFlags.Static | BindingFlags.NonPublic);
+
+        if (methodInfo != null)
+        {
+            object[] parameters = new object[] { texture, rect, detail, alphaTolerance, holeDetection, null };
+            methodInfo.Invoke(null, parameters);
+
+            paths = (Vector2[][])parameters[5];
+        }
+        return paths;
+        
+    }
+    public static void Triangulate(List<Vector2> vertices,List<IndexedEdge>edges,List<Hole>holes,ref List<int> indices)
+    {
+        indices.Clear();
+        if(vertices.Count>0)
+        {
+            InputGeometry inputGeometry = new InputGeometry(vertices.Count);
+            for(int i=0;i<vertices.Count;++i)
+            {
+                Vector2 position = vertices[i];
+                inputGeometry.AddPoint(position.x,position.y);
+            }
+            for(int i=0;i<edges.Count;++i)
+            {
+                IndexedEdge edge = edges[i];
+                inputGeometry.AddSegment(edge.index1,edge.index2);
+            }
+            for(int i=0;i<holes.Count;++i)
+            {
+                Vector2 hole = holes[i].vertex;
+                inputGeometry.AddHole(hole.x,hole.y);
+            }
+            TriangleNet.Mesh triangleMesh = new TriangleNet.Mesh();
+            triangleMesh.Triangulate(inputGeometry);
+            foreach(TriangleNet.Data.Triangle triangle in triangleMesh.Triangles)
+            {
+                if (triangle.P0 >= 0 && triangle.P0 < vertices.Count &&
+                       triangle.P0 >= 0 && triangle.P1 < vertices.Count &&
+                       triangle.P0 >= 0 && triangle.P2 < vertices.Count)
+                {
+                    indices.Add(triangle.P0);
+                    indices.Add(triangle.P2);
+                    indices.Add(triangle.P1);
+                }
+            }
+        }
+    }
+    static void GetSpriteContourData(Sprite sprite, out Vector3[] vertices, out IndexedEdge[] edges)
     {
         int width = 0;
         int height = 0;
@@ -81,7 +170,7 @@ public static class CharacterPreprocessing
 
         //Vector2[] uvs = SpriteUtility.GetSpriteUVs(sprite, false);
         Vector2[] uvs = sprite.uv;
-        vertices = new Vector2[uvs.Length];
+        vertices = new Vector3[uvs.Length];
 
         for (int i = 0; i < uvs.Length; ++i)
         {
@@ -150,21 +239,47 @@ public static class CharacterPreprocessing
         }
     }
 
-#if false
-    private static Vector2[][] GenerateOutline(Sprite sprite)
+    //注意当第一次点击导入角色时，也会调用Reset函数，所以不能轻易把变量设置成null，否则最开始new到的内存白瞎
+    public static void ResetPastCharacterInfo()
     {
-        MethodInfo methodInfo = typeof(SpriteUtility).GetMethod("GenerateOutline", BindingFlags.Static | BindingFlags.NonPublic);
-        if(methodInfo != null)
+        //spriteMesh
+        spriteMeshData = null;
+
+        //bones
+        keypoints.Clear();
+        //fbone = null;
+        BonesInHierarchy.Clear();
+
+        //spriteMeshInstance
+        spriteMeshGO = null;
+
+        //清除子物体，否则换角色不会重置
+        for (int i=0;i<BonesInHierarchy.Count;i++)
         {
-            object[] parameters = new object[] { texture, rect, detail, alphaTolerance, holeDetection, null };
-            methodInfo.Invoke(null, parameters);
-
-            paths = (Vector2[][])parameters[5];
+            Destroy(BonesInHierarchy[i].gameObject);
         }
-        return paths;
-    }
-#endif
 
+        DrawEdge.ResetPastCharacterInfo();
+        DrawSkeleton.ResetPastCharacterInfo();
+        DrawTriangles.ResetPastCharacterInfo();
+        DrawSkinning.ResetPastCharacterInfo();
+    }
+    static void Texture2Sprite()
+    {
+        Texture2D tx = CharacterManager.instance.tx;
+        //sprite = tx as Object as Sprite;
+        sprite = Sprite.Create(tx, new Rect(0, 0, tx.width, tx.height), Vector2.zero);
+    }
+    static void SaveAssetsFile(SpriteMeshData _spriteMeshData)
+    {
+        string assetPath = "/" + _spriteMeshData.name + ".asset";
+        AssetDataBase.SaveAsset<SpriteMeshData>(assetPath, _spriteMeshData);
+    }
+
+    /// <summary>
+    /// 姿态提取
+    /// </summary>
+    /// <returns></returns>
     public static PoseExtractResult ExtractPose()
     {
         string imagePath = CharacterManager.instance.tx.name;
@@ -184,34 +299,69 @@ public static class CharacterPreprocessing
             UserOpenPoseScript.folderSaveImage = imagePath;
             UserOpenPoseScript.producerString = imagePath;
 
-            imagePath = CharacterManager.instance.tx.name.Substring(0, CharacterManager.instance.tx.name.LastIndexOf("."));
-            imagePath = imagePath + "_rendered.png";
-
-            DrawSkeleton.InitRenderImage(imagePath);
+            //imagePath = CharacterManager.instance.tx.name.Substring(0, CharacterManager.instance.tx.name.LastIndexOf("."));
+            //imagePath = imagePath + "_rendered.png";
 
             return PoseExtractResult.OpenPoseStart;
         }
         return PoseExtractResult.ImageError;
     }
+    //forOpenPose
     public static PoseExtractResult ExtractPoseDatum(OpenPose.OPDatum datum)
     {
         txname = System.IO.Path.GetFileNameWithoutExtension(CharacterManager.instance.tx.name);
         if(datum.name.Equals(txname))
         {
             keypoints = datum.poseKeypoints;
+
+            //延时读取，因为openpose会延迟占用文件资源
+            //var t2 = Task.Run(ReadRenderedImageTask);
+            Thread.Sleep(1000);
+            string imagePath = CharacterManager.instance.tx.name.Substring(0, CharacterManager.instance.tx.name.LastIndexOf("."));
+            imagePath = imagePath + "_rendered.png";
+            DrawSkeleton.InitRenderImage(imagePath);
+
+            return PoseExtractResult.Success;
         }
-        return PoseExtractResult.Success;
+        return PoseExtractResult.OpenPoseError;
+        
     }
+    static async void ReadRenderedImageTask()
+    {
+        await Task.Delay(1000);
+
+        string imagePath = CharacterManager.instance.tx.name.Substring(0, CharacterManager.instance.tx.name.LastIndexOf("."));
+        imagePath = imagePath + "_rendered.png";
+        DrawSkeleton.InitRenderImage(imagePath);
+        //return PoseExtractResult.Success;
+
+    }
+
+
+    /// <summary>
+    /// 三角剖分
+    /// </summary>
+    /// <returns></returns>
+
     public static TriangulateResult Triangulation()
     {
         if(sprite)
         {
             if(spriteMeshData.vertices.Length > 0 && spriteMeshData.edges.Length > 0)
             {
-                int[] indices;
-                GetSpriteMeshData(sprite,out indices);
-                spriteMeshData.indices = indices;
-                SaveAssetsFile();
+                //int[] indices;
+                //GetSpriteMeshData(sprite,out indices);
+                //spriteMeshData.indices = indices;
+                //UpdateSpriteMeshDataSharedMesh();
+                List<Vector2> l_texcoords = spriteMeshData.vertices.ToList();
+                List<IndexedEdge> l_indexedEdges = spriteMeshData.edges.ToList();
+                List<int> l_indices = spriteMeshData.indices.ToList();
+                List<Hole> holes = new List<Hole>();
+                float tesselation = 0f;
+                Tessellate(l_texcoords, l_indexedEdges, holes, l_indices, tesselation * 10f);
+
+                SaveAssetsFile(spriteMeshData);
+
                 DrawTriangles.InitMeshIndices(spriteMeshData);
                 return TriangulateResult.Success;
             }
@@ -228,13 +378,20 @@ public static class CharacterPreprocessing
             indices[i] = (int)l_indices[i];
         }
     }
+
+    /// <summary>
+    /// 骨骼生成
+    /// </summary>
+    /// <returns></returns>
     public static BoneGenerateResult GenerateSkeleton()
     {
         //如果是刚才的姿态提取算法提取到的数据
         if(keypoints.Count > 0)
         {
-            ChangeKeypoints2Bone2D(keypoints);
-            DrawSkeleton.InitSkeletonBone2D(fbone);
+            Extra.ConvertKeyPoints2Skeleton(keypoints,fbone,BonesInHierarchy);
+
+            DrawSkeleton.InitSkeletonBone2D(fbone,BonesInHierarchy);
+
             return BoneGenerateResult.Success;
         }
         //没有启用OpenPose，本地已经有了json文件
@@ -245,217 +402,362 @@ public static class CharacterPreprocessing
             if(!string.IsNullOrEmpty(jsonPath) && File.Exists(jsonPath))
             {
                 //读取本地json文件，赋值到keypoints
-                ParseJson(ReadFile(jsonPath));
-                ChangeKeypoints2Bone2D(keypoints);
-                DrawSkeleton.InitSkeletonBone2D(fbone);
+                Extra.ParseJson(Extra.ReadFile(jsonPath),ref keypoints);
+
+                Extra.ConvertKeyPoints2Skeleton(keypoints,fbone,BonesInHierarchy);
+
+                DrawSkeleton.InitSkeletonBone2D(fbone,BonesInHierarchy);
                 return BoneGenerateResult.Success;
             }
         }
         return BoneGenerateResult.jsonError;
     }
-    static void ParseJson(string jsonData)
-    {
-        Dictionary<string, System.Object> pose = Ps2D.MiniJSON.Json.Deserialize(jsonData) as Dictionary<string, System.Object>;
-        //Dictionary<string, Object> pose0 = Ps2D.MiniJSON.Json.Deserialize(pose["pose_0"]) as Dictionary<string, Object>;
-        Dictionary<string, System.Object> pose0 = pose["pose_0"] as Dictionary<string, System.Object>;
-        List<System.Object> keypointsOb = pose0["data"] as List<System.Object>; //不知道这样装箱拆箱各种强制转换会不会丢失数据精度
-        keypoints = new OpenPose.MultiArray<float>();
-        foreach (var keypoint in keypointsOb)
-        {
-            //keypoints.Add((float)keypoint);
-            float fnum = 0;
-            float.TryParse(keypoint.ToString(), out fnum);
-            keypoints.Add(fnum);
-        }
-    }
-    static string ReadFile(string fileName)
-    {
-        StringBuilder str = new StringBuilder();
-        using (FileStream fs = File.OpenRead(fileName))
-        {
-            long left = fs.Length;
-            int maxLength = 100;//每次读取的最大长度  
-            int start = 0;//起始位置  
-            int num = 0;//已读取长度  
-            while (left > 0)
-            {
-                byte[] buffer = new byte[maxLength];//缓存读取结果  
-                char[] cbuffer = new char[maxLength];
-                fs.Position = start;//读取开始的位置  
-                num = 0;
-                if (left < maxLength)
-                {
-                    num = fs.Read(buffer, 0, Convert.ToInt32(left));
-                }
-                else
-                {
-                    num = fs.Read(buffer, 0, maxLength);
-                }
-                if (num == 0)
-                {
-                    break;
-                }
-                start += num;
-                left -= num;
-                str = str.Append(Encoding.UTF8.GetString(buffer));
-            }
-        }
-        return str.ToString();
-    }
-    static void ChangeKeypoints2Bone2D(OpenPose.MultiArray<float> keypoints)
-    {
-        //18*3=54个点，(x,y,score)的形式
-        //foreach (var t in keypoints)
-        //{
-        //    Console.Log(t);
-        //}
-        OpenPose.MultiArray<float> keypointsXY = new OpenPose.MultiArray<float>();
 
-        //1.把54个值去掉score，只保留x，y值，得到36个值
-        for (int i = 0; i < keypoints.Count; i++)
-        {
-            if (i % 3 == 0 || i % 3 == 1)
-            {
-                keypointsXY.Add(keypoints[i]);
-            }
-        }
 
-        //2.我们只要前14个有用关键点，对应28个值，将值转化为点
-        List<Vector2> points = new List<Vector2>();
-        for (int i = 0; i < keypointsXY.Count - 8; i += 2)
-        {
-            points.Add(new Vector2(keypointsXY[i] / 100f, -keypointsXY[i + 1] / 100f));//(x,y)
-        }
+    /// <summary>
+    /// 蒙皮
+    /// </summary>
+    /// <returns></returns>
 
-        //3.将点两两配对转化为Bone2D，确定Bone2D的两个端点的位置和length以及rotation
-        //（根据OpenPose转化的骨骼图和我们想要的骨骼属性结构）
-        // 考虑关键点为0的情况--要不先手动删除空bone物体把...
-        int rootpointsindex = 1;
-        int[] firstlayerpointsindex = new int[5] { 0, 2, 5, 8, 11 };
-        int[] ffirstlayerpointsindex = new int[4] { 2, 5, 8, 11 };
-        int[] secondlayerpointsindex = new int[4] { 3, 6, 9, 12 };
-        //14个关键点，对应13个骨骼
-        //其实应该叫锁骨、上胳膊、下胳膊这样，但是你懂就好
-        string[] skeletonsName =
-        {
-            "neck_bone", //0
-            " ",  //1
-            "rshoulder_bone", //2
-            "relbow_bone", //3
-            "rwrist_bone", //4
-            "lshoulder_bone", //5
-            "lelbow_bone", //6
-            "lwrist_bone", //7
-            "rhip_bone", //8
-            "rknee_bone", //9
-            "rankle_bone", //10
-            "lhip_bone", //11
-            "lknee_bone", //12
-            "lankle_bone" //13
-        };
-        fbone.transform.position = Vector3.zero;
-        for (int i = 0; i < points.Count; i++)
-        {
-            //3.0.root根节点到第一层级关键点的骨骼
-            if (i == rootpointsindex)
-            {
-                for (int j = 0; j < firstlayerpointsindex.Length; j++)
-                {
-                    //转化为骨骼，零散到hierarchy,因为我是根据两个关键点求Bone2D的，所以Bone2D的长度、旋转角都应该求出来更新其值
-                    GameObject bone = new GameObject(skeletonsName[firstlayerpointsindex[j]]);
-                    bone.tag = "bone2D";
-                    bone.transform.parent = fbone.transform;
-                    Anima2D.Bone2D boneComponent = bone.AddComponent<Anima2D.Bone2D>();
-                    if (points[i] == Vector2.zero || points[firstlayerpointsindex[j]] == Vector2.zero)
-                    {
-                        bone.transform.position = Vector3.zero;
-                        boneComponent.globalendPosition = Vector3.zero;
-                        boneComponent.globalstartPosition = Vector3.zero;
-                        ResetZeroBone2DProperty(bone);
-                    }
-                    else
-                    {
-                        bone.transform.position = new Vector3(points[i].x, points[i].y, 0); //pixelsToUnit
-                        boneComponent.globalstartPosition = bone.transform.position;
-                        boneComponent.globalendPosition = new Vector3(points[firstlayerpointsindex[j]].x, points[firstlayerpointsindex[j]].y, 0);
-                        UpdateBone2DProperty(bone);
-                    }
-
-                }
-
-            }
-            //3.1. 第一层级关键点到第二层级关键点的骨骼...第二层级关键点到第三层级关键点的骨骼
-            else if (Array.IndexOf(ffirstlayerpointsindex, i) != -1 || Array.IndexOf(secondlayerpointsindex, i) != -1)
-            {
-                //转化为骨骼，零散到hierarchy,因为我是根据两个关键点求Bone2D的，所以Bone2D的长度、旋转角都应该求出来更新其值
-                GameObject bone = new GameObject(skeletonsName[i + 1]);
-                bone.tag = "bone2D";
-                bone.transform.parent = fbone.transform;
-                Anima2D.Bone2D boneComponent = bone.AddComponent<Anima2D.Bone2D>();
-
-                //没有检测到关键点的情况,直接归为坐标原点
-                if (points[i] == Vector2.zero || points[i + 1] == Vector2.zero)
-                {
-                    bone.transform.position = Vector3.zero;
-                    boneComponent.globalendPosition = Vector3.zero;
-                    boneComponent.globalstartPosition = Vector3.zero;
-                    ResetZeroBone2DProperty(bone);
-                }
-                else
-                {
-                    bone.transform.position = new Vector3(points[i].x, points[i].y, 0);
-                    boneComponent.globalendPosition = new Vector3(points[i + 1].x, points[i + 1].y, 0);
-                    boneComponent.globalstartPosition = bone.transform.position;
-                    UpdateBone2DProperty(bone);
-                }
-            }
-        }
-    }
-    static void ResetZeroBone2DProperty(GameObject bone)
-    {
-        Anima2D.Bone2D boneComponent = bone.GetComponent<Anima2D.Bone2D>();
-        boneComponent.localLength = 0;
-    }
-    //3.2.根据骨骼的两个端点，计算其旋转角(矩阵),长度，更新端点值让其能够在Scene场景中的绘制也随之跟新
-    static void UpdateBone2DProperty(GameObject bone)
-    {
-        Quaternion l_deltaRotation = Quaternion.identity;
-        //先看看BoneUtils类中有没有现成的接口--似乎都不太现成，所以先自己写吧
-        Anima2D.Bone2D boneComponent = bone.GetComponent<Anima2D.Bone2D>();
-        boneComponent.localLength = (boneComponent.globalstartPosition - boneComponent.globalendPosition).magnitude;
-        Vector2 localPosition = new Vector2(boneComponent.globalendPosition.x - boneComponent.globalstartPosition.x,
-                                            boneComponent.globalendPosition.y - boneComponent.globalstartPosition.y);
-        float angle = Mathf.Atan2(localPosition.y, localPosition.x) * Mathf.Rad2Deg;
-        l_deltaRotation = Quaternion.AngleAxis(angle, Vector3.forward);
-        bone.transform.localRotation *= l_deltaRotation;
-    }
     public static BoneSkinningResult BoneSkinning()
     {
-        if (!fbone || fbone.transform.childCount == 0)
+        if (!fbone || fbone.transform.childCount <= 0 || BonesInHierarchy.Count <= 0)
             return BoneSkinningResult.BoneError;
-        if (!spriteMeshData || spriteMeshData.indices.Length == 0)
+        if (fbone.transform.childCount != BonesInHierarchy.Count)
+            return BoneSkinningResult.BoneError;
+        if (!spriteMeshData || spriteMeshData.indices.Length <= 0)
             return BoneSkinningResult.MeshError;
 
-        //遍历fbone下的所有bone2d子骨骼
-        //foreach()
-        //{
-        //    BindBones();
-        //}
-        
+        CreateSpriteMeshGameObject(); //创建SpriteMeshInstance
+        BindBones();
         CalculateAutomaticWeights();
 
         DrawSkinning.InitBindingInfo();
         return BoneSkinningResult.Success;
     }
-    static void BindBones(Anima2D.Bone2D bone)
+    static void CreateSpriteMeshGameObject()
     {
-        BindInfo bindInfo = new BindInfo();
-        //bindInfo.bindPose = bone.transform.worldToLocalMatrix * spriteMeshInstance.transform.localToWorldMatrix;
+        GameObject gameObject = new GameObject(spriteMeshData.meshname);
 
+        if (gameObject)
+        {
+            gameObject.transform.position = new Vector3(0,0,0);
+            spriteMeshGO = gameObject.AddComponent<SpriteMeshGameObject>();
+            spriteMeshGO.spriteMeshData = spriteMeshData;
+            //material
+        }
     }
+    static void BindBones()
+    {
+        if(spriteMeshGO)
+        {
+            List<BindingInfo> bindPoses = new List<BindingInfo>();
+            foreach(Bone2D bone in BonesInHierarchy)//因为要绑定所有的骨骼
+            {
+                BindingInfo bindInfo = new BindingInfo();
+                //参考姿势->从模型空间转换到世界空间(骨架空间)，再次转换到骨骼空间
+                bindInfo.bindPose = bone.transform.worldToLocalMatrix * spriteMeshGO.transform.localToWorldMatrix; 
+                bindInfo.boneLength = bone.localLength;
+                bindInfo.name = bone.name;
+                //bindInfo.path = GetBonePath(bone);
+
+                //spriteMeshData.bindPoses spriteMeshGO.bones
+                if (!bindPoses.Contains(bindInfo))
+                {
+                    bindPoses.Add(bindInfo);
+                }
+            }
+            //update spriteMeshData & spriteMeshInstance(GO)
+            spriteMeshData.bindPoses = bindPoses.ToArray();
+            spriteMeshGO.bones = BonesInHierarchy;
+            UpdateRenderer();
+        }
+    }
+    static void UpdateRenderer()
+    {
+        if (!spriteMeshGO)
+            return;
+        if(spriteMeshData)
+        {
+            UpdateSpriteMeshDataSharedMesh();
+
+            UnityEngine.Mesh sharedMesh = spriteMeshData.sharedMesh;
+            if(sharedMesh.bindposes.Length > 0 && spriteMeshGO.bones.Count > sharedMesh.bindposes.Length)
+            {
+                spriteMeshGO.bones = spriteMeshGO.bones.GetRange(0,sharedMesh.bindposes.Length);
+            }
+            if(CanEnableSkinning(spriteMeshGO))
+            {
+                //去掉一些这俩存在的组件是因为他们会和SkinnedMeshRenderer冲突
+                MeshFilter meshFilter = spriteMeshGO.cachedMeshFilter;
+                MeshRenderer meshRenderer = spriteMeshGO.cachedRenderer as MeshRenderer;
+
+                if(meshFilter)
+                {
+                    GameObject.DestroyImmediate(meshFilter);
+                }
+                if(meshRenderer)
+                {
+                    GameObject.DestroyImmediate(meshRenderer);
+                }
+                SkinnedMeshRenderer skinnedMeshRenderer = spriteMeshGO.cachedSkinnedRenderer;
+                if(!skinnedMeshRenderer)
+                {
+                    skinnedMeshRenderer = spriteMeshGO.gameObject.AddComponent<SkinnedMeshRenderer>();
+                }
+                skinnedMeshRenderer.bones = spriteMeshGO.bones.ConvertAll(bone=>bone.transform).ToArray();
+                if(spriteMeshGO.bones.Count>0)
+                {
+                    //skinnedMeshRenderer.rootBone = null; //感觉不应该赋值
+                    skinnedMeshRenderer.rootBone = spriteMeshGO.bones[0].transform;
+                }
+                
+            }
+            else
+            {
+                SkinnedMeshRenderer skinnedMeshRenderer = spriteMeshGO.cachedSkinnedRenderer;
+                MeshFilter meshFilter = spriteMeshGO.cachedMeshFilter;
+                MeshRenderer meshRenderer = spriteMeshGO.cachedRenderer as MeshRenderer;
+
+                if(skinnedMeshRenderer)
+                {
+                    GameObject.DestroyImmediate(skinnedMeshRenderer);
+                }
+                if(!meshFilter)
+                {
+                    meshFilter = spriteMeshGO.gameObject.AddComponent<MeshFilter>();
+                }
+                if(!meshRenderer)
+                {
+                    meshRenderer = spriteMeshGO.gameObject.AddComponent<MeshRenderer>();
+                }
+            }
+        }
+    }
+    static bool CanEnableSkinning(SpriteMeshGameObject spriteMeshInstance)
+    {
+        return spriteMeshInstance.spriteMeshData && !HasNullBones(spriteMeshInstance) && spriteMeshInstance.bones.Count > 0 && (spriteMeshInstance.spriteMeshData.sharedMesh.bindposes.Length == spriteMeshInstance.bones.Count);
+    }
+    public static bool HasNullBones(SpriteMeshGameObject spriteMeshInstance)
+    {
+        if (spriteMeshInstance)
+        {
+            return spriteMeshInstance.bones.Contains(null);
+        }
+        return false;
+    }
+    static void UpdateSpriteMeshDataSharedMesh()
+    {
+        if (!spriteMeshData)
+            return;
+        if(!spriteMeshData.sharedMesh)
+        {
+            UnityEngine.Mesh mesh = new UnityEngine.Mesh();
+            //UnityEditor.SerializedObject spriteMeshSO = new UnityEditor.SerializedObject(spriteMeshData);
+            //UnityEditor.SerializedProperty sharedMeshProp = spriteMeshData.FindProperty("m_SharedMesh");
+            //spriteMeshSO.Update();
+            spriteMeshData.sharedMesh = mesh;
+            //spriteMeshSO.ApplyModifiedProperties();
+        }
+
+        List<Matrix4x4> bindposes = (new List<BindingInfo>(spriteMeshData.bindPoses)).ConvertAll(p => p.bindPose);
+        List<UnityEngine.BoneWeight> boneWeights = new List<UnityEngine.BoneWeight>(spriteMeshData.boneWeights.Length);
+        //Vector2[] normals = (new List<Vector2>(spriteMeshData.vertices)).ConvertAll(v => Vector2.back).ToArray();
+        Vector2 textureWidthHeightInv = new Vector2(1f / sprite.texture.width, 1f / sprite.texture.height);
+        Vector2[] uvs = (new List<Vector2>(spriteMeshData.vertices)).ConvertAll(v => Vector2.Scale(v, textureWidthHeightInv)).ToArray(); //?
+
+        Vector3[] tmp = new List<Vector2>((spriteMeshData.vertices)).ConvertAll(v => new Vector3(v.x,v.y,0)).ToArray() ;
+        Vector3[] normals = (new List<Vector3>(tmp)).ConvertAll(v => Vector3.back).ToArray();
+
+        spriteMeshData.sharedMesh.Clear();
+        spriteMeshData.sharedMesh.vertices = tmp;
+        spriteMeshData.sharedMesh.uv = uvs;
+        spriteMeshData.sharedMesh.triangles = spriteMeshData.indices.ToArray();
+        spriteMeshData.sharedMesh.normals = normals;
+        spriteMeshData.sharedMesh.boneWeights = boneWeights.ToArray();
+        spriteMeshData.sharedMesh.bindposes = bindposes.ToArray();
+        spriteMeshData.sharedMesh.RecalculateBounds();
+    }
+
     static void CalculateAutomaticWeights()
     {
+        if (!spriteMeshData)
+            return;
+        if (spriteMeshData.bindPoses.Length <= 0)
+            return;
+        if (spriteMeshData.vertices.Length <= 0)
+            return;
+        List<Vector2> m_TexVertices = spriteMeshData.vertices.ToList();
+        List<Node> targetNodes = m_TexVertices.ConvertAll(v => Node.Create(m_TexVertices.IndexOf(v)));
+        List<IndexedEdge> indexedEdges = spriteMeshData.edges.ToList();
 
+        //控制点--一根骨骼的两个端点
+        List<Vector2> controlPoints = new List<Vector2>();
+        List<IndexedEdge> controlPointEdges = new List<IndexedEdge>();
+        List<int> pins = new List<int>();
+
+        foreach (BindingInfo bindInfo in spriteMeshData.bindPoses.ToList())
+        {
+            Vector2 tip = (Vector2)bindInfo.position;
+            Vector2 tail = (Vector2)bindInfo.endPoint;
+
+            if (bindInfo.boneLength <= 0f)
+            {
+                int index = controlPoints.Count;
+                controlPoints.Add(tip);
+                pins.Add(index);
+
+                continue;
+            }
+            int index1 = -1;
+            if (!ContainsVector(tip, controlPoints, 0.01f, out index1))
+            {
+                index1 = controlPoints.Count;
+                controlPoints.Add(tip);
+            }
+
+            int index2 = -1;
+            if (!ContainsVector(tail, controlPoints, 0.01f, out index2))
+            {
+                index2 = controlPoints.Count;
+                controlPoints.Add(tail);
+            }
+            IndexedEdge edge = new IndexedEdge(index1, index2);
+            controlPointEdges.Add(edge);
+        }
+        /*
+        * 第一个参数：顶点
+        * 第个参数：边
+        * 第三个参数：骨骼的两个端点做控制点
+        * 第四个参数：骨骼
+        * 第五个参数：
+        */
+        UnityEngine.BoneWeight[] boneWeights = BbwPlugin.CalculateBbw
+                (m_TexVertices.ToArray(), indexedEdges.ToArray(), controlPoints.ToArray(), controlPointEdges.ToArray(), pins.ToArray());
+
+        //每个顶点都有自己绑定的权重信息
+        if(spriteMeshData.boneWeights.Length != boneWeights.Length)
+        {
+            spriteMeshData.boneWeights = new BoneWeight[boneWeights.Length];
+
+        }
+        foreach (Node node in targetNodes)
+        {
+            UnityEngine.BoneWeight unityBoneWeight = boneWeights[node.index];
+
+            SetBoneWeight(node, CreateBoneWeightFromUnityBoneWeight(unityBoneWeight));
+        }
+
+    }
+    static void SetBoneWeight(Node node, BoneWeight boneWeight)
+    {
+        
+        spriteMeshData.boneWeights[node.index] = boneWeight;
+    }
+
+    static BoneWeight CreateBoneWeightFromUnityBoneWeight(UnityEngine.BoneWeight unityBoneWeight)
+    {
+        BoneWeight boneWeight = new BoneWeight();
+
+        boneWeight.boneIndex0 = unityBoneWeight.boneIndex0;
+        boneWeight.boneIndex1 = unityBoneWeight.boneIndex1;
+        boneWeight.boneIndex2 = unityBoneWeight.boneIndex2;
+        boneWeight.boneIndex3 = unityBoneWeight.boneIndex3;
+        boneWeight.weight0 = unityBoneWeight.weight0;
+        boneWeight.weight1 = unityBoneWeight.weight1;
+        boneWeight.weight2 = unityBoneWeight.weight2;
+        boneWeight.weight3 = unityBoneWeight.weight3;
+
+        return boneWeight;
+    }
+
+    static bool ContainsVector(Vector2 vectorToFind, List<Vector2> list, float epsilon, out int index)
+    {
+        for (int i = 0; i < list.Count; i++)
+        {
+            Vector2 v = list[i];
+            if ((v - vectorToFind).sqrMagnitude < epsilon)
+            {
+                index = i;
+                return true;
+            }
+        }
+
+        index = -1;
+        return false;
+    }
+
+    //曲面细分
+    public static void Tessellate(List<Vector2> vertices, List<IndexedEdge> indexedEdges, List<Hole> holes, List<int> indices, float tessellationAmount)
+    {
+        if (tessellationAmount <= 0f)
+        {
+            return;
+        }
+
+        indices.Clear();
+
+        if (vertices.Count >= 3)
+        {
+            InputGeometry inputGeometry = new InputGeometry(vertices.Count);
+
+            for (int i = 0; i < vertices.Count; ++i)
+            {
+                Vector2 vertex = vertices[i];
+                inputGeometry.AddPoint(vertex.x, vertex.y);
+            }
+
+            for (int i = 0; i < indexedEdges.Count; ++i)
+            {
+                IndexedEdge edge = indexedEdges[i];
+                inputGeometry.AddSegment(edge.index1, edge.index2);
+            }
+
+            for (int i = 0; i < holes.Count; ++i)
+            {
+                Vector2 hole = holes[i].vertex;
+                inputGeometry.AddHole(hole.x, hole.y);
+            }
+
+            TriangleNet.Mesh triangleMesh = new TriangleNet.Mesh();
+            TriangleNet.Tools.Statistic statistic = new TriangleNet.Tools.Statistic();
+
+            triangleMesh.Triangulate(inputGeometry);
+
+            triangleMesh.Behavior.MinAngle = 20.0;
+            triangleMesh.Behavior.SteinerPoints = -1;
+            triangleMesh.Refine(true);
+
+            statistic.Update(triangleMesh, 1);
+
+            triangleMesh.Refine(statistic.LargestArea / tessellationAmount);
+            triangleMesh.Renumber();
+
+            vertices.Clear();
+            indexedEdges.Clear();
+
+            foreach (TriangleNet.Data.Vertex vertex in triangleMesh.Vertices)
+            {
+                vertices.Add(new Vector2((float)vertex.X, (float)vertex.Y));
+            }
+
+            foreach (TriangleNet.Data.Segment segment in triangleMesh.Segments)
+            {
+                indexedEdges.Add(new IndexedEdge(segment.P0, segment.P1));
+            }
+
+            foreach (TriangleNet.Data.Triangle triangle in triangleMesh.Triangles)
+            {
+                if (triangle.P0 >= 0 && triangle.P0 < vertices.Count &&
+                   triangle.P0 >= 0 && triangle.P1 < vertices.Count &&
+                   triangle.P0 >= 0 && triangle.P2 < vertices.Count)
+                {
+                    indices.Add(triangle.P0);
+                    indices.Add(triangle.P2);
+                    indices.Add(triangle.P1);
+                }
+            }
+        }
     }
 
     public static void AutoProcessing()

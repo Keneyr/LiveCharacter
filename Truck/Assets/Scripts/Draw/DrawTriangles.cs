@@ -27,7 +27,7 @@ public class DrawTriangles : MonoBehaviour
     }
     public void OnRenderObject()
     {
-        drawTriangles(CharacterPreprocessing.spriteMeshData);
+        drawTriangles();
     }
 
     public static void ResetPastCharacterInfo()
@@ -60,10 +60,9 @@ public class DrawTriangles : MonoBehaviour
             meshMaterial.SetInt("_ZWrite", 0);
         }
     }
-    public static void drawTriangles(SpriteMeshData spriteMeshData)
+    //这个函数参数最好是一个bool变量，而不是一直找其他类下的静态变量
+    public static void drawTriangles()
     {
-        if (!spriteMeshData)
-            return;
         if (indices.Count == 0)
             return;
 
@@ -72,9 +71,9 @@ public class DrawTriangles : MonoBehaviour
             int index = indices[i];
             int index1 = indices[i + 1];
             int index2 = indices[i + 2];
-            Vector3 v1 = points[index];
-            Vector3 v2 = points[index1];
-            Vector3 v3 = points[index2];
+            Vector2 v1 = points[index];
+            Vector2 v2 = points[index1];
+            Vector2 v3 = points[index2];
 
             Extra.DrawLine(v1,v2, Vector3.forward, lineWidth, meshMaterial);
             Extra.DrawLine(v2,v3, Vector3.forward, lineWidth, meshMaterial);

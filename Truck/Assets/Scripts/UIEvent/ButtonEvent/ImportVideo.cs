@@ -7,13 +7,7 @@ using UnityEngine.UI;
 
 public class ImportVideo : MonoBehaviour
 {
-    // Start is called before the first frame update
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
-
+    
     private Button Open;
     // Use this for initialization
     void Start()

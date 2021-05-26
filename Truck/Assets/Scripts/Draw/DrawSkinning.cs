@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
-
+/// <summary>
+/// 默认是draw overlay 以及 draw pies 五彩斑斓的好看的
+/// </summary>
 
 public class DrawSkinning : MonoBehaviour
 {

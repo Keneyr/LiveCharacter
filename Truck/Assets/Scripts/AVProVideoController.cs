@@ -43,6 +43,7 @@ public class AVProVideoController : Singleton<AVProVideoController>
     //加载视频
     public void LoadVideo(string _videoPath)
     {
+        ResetPastVideoInfo();
         videoPath = _videoPath;
         //通过插件中的方法加载（1.加载路径格式（与面板上相对应）2.加载的文件名 3.默认是否开始播放）
         mediaPlayer.OpenVideoFromFile(
@@ -57,11 +58,16 @@ public class AVProVideoController : Singleton<AVProVideoController>
         VideoSliderController.instance.sliderStartFrame.maxValue = totalFrame;
         VideoSliderController.instance.sliderInterval.maxValue = totalFrame;
 
-        VideoSliderController.instance.sliderEndFrame.value = 0;
+        VideoSliderController.instance.sliderEndFrame.value = totalFrame;
+        VideoSliderController.instance.inputEndFrame.text = totalFrame.ToString();
         VideoSliderController.instance.sliderStartFrame.value = 0;
         VideoSliderController.instance.sliderInterval.value = totalFrame>2?2:0;
         
 
+    }
+    private void ResetPastVideoInfo()
+    {
+        VideoPreprocessing.ResetPastVideoInfo();
     }
 
     //视频播放时间触发

@@ -36,7 +36,7 @@ public class DrawEdge : MonoBehaviour
 
     public void OnRenderObject()
     {
-        drawEdge(CharacterPreprocessing.spriteMeshData);
+        drawEdge();
     }
 
     void CreateLineMaterial()
@@ -66,17 +66,11 @@ public class DrawEdge : MonoBehaviour
     }
     
     
-    static void drawEdge(SpriteMeshData spriteMeshData)
+    static void drawEdge()
     {
-        if (!spriteMeshData)
-            return;
         if (edges.Count == 0)
             return;
         
-        //Sprite sprite = Sprite.Create(tx, new Rect(0, 0, tx.width, tx.height), Vector2.zero);
-        //instance.GetComponent<Image>().sprite = sprite;
-        
-        //InitEdges(spriteMeshData);
         for (int i=0;i<edges.Count;i++)
         {
             Edge edge = edges[i];

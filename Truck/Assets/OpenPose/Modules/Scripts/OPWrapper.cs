@@ -268,9 +268,9 @@ namespace OpenPose {
         // Log callback
         private static OPBind.DebugCallback OPLog = delegate(string message, int type){
             switch (type){
-                case 0: Console.Log("OP_Log: " + message); break;
-                case 1: Console.LogWarning("OP_Warning: " + message); break;
-                case -1: Console.LogError("OP_Error: " + message); break;
+                case 0: Debug.Log("OP_Log: " + message); break;
+                case 1: Debug.LogWarning("OP_Warning: " + message); break;
+                case -1: Debug.LogError("OP_Error: " + message); break;
             }
         };
 

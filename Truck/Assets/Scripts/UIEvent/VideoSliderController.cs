@@ -4,6 +4,14 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 
+public enum SignalType
+{
+    startFrameChange = 0,
+    endFrameChange = 1,
+    intervalChange = 2,
+};
+
+
 /// <summary>
 /// 根据用户交互，设置初始帧，结束帧，帧间隔 参数
 /// 查看视频总帧数
@@ -26,6 +34,8 @@ public class VideoSliderController : Singleton<VideoSliderController>
     //private int totalFrames;
 
     public Text textCurrentTime;
+
+    //SignalType signalType;
 
     private void Awake()
     {
@@ -67,27 +77,44 @@ public class VideoSliderController : Singleton<VideoSliderController>
 
     void SliderStartChange(float value)
     {
-        if (!IsSelectingSlider())
+        //改成判断是否更新对应的text阈更好，因为很可能在程序中更新slider
+        //if (!IsSelectingSlider())
+        //    return;
+        if (IsSelectingInputField())
             return;
         inputStartFrame.text = value.ToString();
         //更新视频播放时间及视频帧画面
         SetVideoTimeIndexChange(value);
+        //更新展示的渲染图
+        SetShowRenderFramePngIndexChange(value, SignalType.startFrameChange);
     }
     void SliderEndChange(float value)
     {
-        if (!IsSelectingSlider())
+        //if (!IsSelectingSlider())
+        //    return;
+        if (IsSelectingInputField())
             return;
         inputEndFrame.text = value.ToString();
+
+        //更新展示的渲染图
+        SetShowRenderFramePngIndexChange(value, SignalType.endFrameChange);
     }
     void SliderIntervalChange(float value)
     {
-        if (!IsSelectingSlider())
+        //if (!IsSelectingSlider())
+        //    return;
+        if (IsSelectingInputField())
             return;
         inputInterval.text = value.ToString();
+
+        //更新展示的渲染图
+        SetShowRenderFramePngIndexChange(value, SignalType.intervalChange);
     }
     void InputFieldStartChange(string str)
     {
-        if (!IsSelectingInputField())
+        //if (!IsSelectingInputField())
+        //    return;
+        if (IsSelectingSlider())
             return;
         if(int.Parse(str)>=0 && int.Parse(str) <= sliderStartFrame.maxValue)
         {
@@ -102,7 +129,9 @@ public class VideoSliderController : Singleton<VideoSliderController>
     }
     void InputFieldEndChange(string str)
     {
-        if (!IsSelectingInputField())
+        //if (!IsSelectingInputField())
+        //    return;
+        if (IsSelectingSlider())
             return;
         if (int.Parse(str) >= 0 && int.Parse(str) <= sliderEndFrame.maxValue)
         {
@@ -117,7 +146,9 @@ public class VideoSliderController : Singleton<VideoSliderController>
 
     void InputFieldIntervalChange(string str)
     {
-        if (!IsSelectingInputField())
+        //if (!IsSelectingInputField())
+        //    return;
+        if (IsSelectingSlider())
             return;
         if (int.Parse(str) >= 0 && int.Parse(str) <= sliderInterval.maxValue)
         {
@@ -136,7 +167,29 @@ public class VideoSliderController : Singleton<VideoSliderController>
         //URLVideoPlayerController.instance.SetVideoTimeIndexChange(value);
         AVProVideoController.instance.SetVideoTimeIndexChange(value);
     }
- 
+    //根据用户开始的帧索引显示渲染后的视频帧画面到可视化区
+    void SetShowRenderFramePngIndexChange(float value, SignalType _signalType)
+    {
+        switch(_signalType)
+        {
+            case SignalType.startFrameChange:
+                //更新右侧条
+                DrawVideoPoseFrames.SetShowRenderFramePngIndexChange();
+                break;
+            case SignalType.endFrameChange:
+                //更新尾部texture
+                DrawVideoPoseFrames.SetShowRenderFramePngEndIndexChange();
+                break;
+            case SignalType.intervalChange:
+                //更新texture
+                DrawVideoPoseFrames.SetShowRenderFramePngIntervalChange();
+                break;
+            default:
+                break;
+        }
+    }
+
+#if false
     //因为帧索引从0起步
     public void ShowTotalFrames(ulong totalframe)
     {
@@ -148,6 +201,7 @@ public class VideoSliderController : Singleton<VideoSliderController>
         sliderEndFrame.maxValue = totalframe - 1;
         sliderInterval.maxValue = totalframe - 1;
     }
+#endif
     public void ShowVideoTime(AVVideoTime videoTime)
     {
         textCurrentTime.text = string.Format("{0:D2}:{1:D2} / {2:D2}:{3:D2}",

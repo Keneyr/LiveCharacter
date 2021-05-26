@@ -34,26 +34,33 @@ public class UserOpenPoseScript : MonoBehaviour
     private int frameCounter = 0;
     private void Update()
     {
+        if (producerString == null)
+            return;
         //AIDetectBoneUtils给了要检测的角色路径，这里是用flg来控制的，学会回调再来更新
-        if (producerString != null)
+        if (producerString != null && ContollerOpenUpdate)
         {
             CusStart();
-            producerString = null;
+            ContollerOpenUpdate = false;
+            //producerString = null;
         }
         //只能这么消耗了...
-        if (ContollerOpenUpdate && OpenPose.OPWrapper.OPGetOutput(out datum))
+        if (OpenPose.OPWrapper.OPGetOutput(out datum))
         {
             Console.Log("成功获取到openpose检测的角色骨骼信息...");
+            
             //防止一张图片，检测多次
             ContollerOpenUpdate = false;
+            producerString = null;
 
             //OpenPose.MultiArray<float> keypoints = datum.poseKeypoints;
-            CharacterPreprocessing.ExtractPoseDatum(datum);
+            
             
             //立刻停止OpenPose
             OpenPose.OPWrapper.CusOnDestroy();
             Console.Log("PoseExtract Complete.");
-            
+
+            CharacterPreprocessing.ExtractPoseDatum(datum);
+
             //AIBoneUtils.ChangeKeypoints2Bone2D(keypoints);
         }
 

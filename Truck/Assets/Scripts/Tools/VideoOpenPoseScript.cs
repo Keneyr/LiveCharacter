@@ -14,7 +14,7 @@ public class VideoOpenPoseScript : MonoBehaviour
     public static string folderSaveKeyPoints = null;
     public static string folderSaveImage = null;
 
-    public ulong videoframeStep;
+    public ulong videoframeStep = 1;
     public int maxPeople = 1;
     public bool
         handEnabled = false,
@@ -32,17 +32,33 @@ public class VideoOpenPoseScript : MonoBehaviour
     private float avgFrameRate = 0f;
     private int frameCounter = 0;
 
+    bool setbegin = true;
+    public static bool stopOpenPose = false;
     private void Start()
     {
-        videoframeStep = (ulong)VideoSliderController.instance.sliderInterval.value;
+        //videoframeStep = (ulong)VideoSliderController.instance.sliderInterval.value;
+        videoframeStep = 1;
     }
 
     private void Update()
     {
-        if(producerString != null)
+        
+        if (producerString == null)
+            return;
+
+        if (stopOpenPose)
+        {
+            //立刻停止openPose
+            OpenPose.OPWrapper.CusOnDestroy();
+            Console.Log("Video PoseExtract Complete.");
+            stopOpenPose = false;
+            producerString = null;
+        }
+        if (producerString != null && setbegin)
         {
             CusStart();
-            producerString = null;
+            setbegin = false;
+            //producerString = null;
         }
         if(OpenPose.OPWrapper.OPGetOutput(out datum))
         {
@@ -57,7 +73,6 @@ public class VideoOpenPoseScript : MonoBehaviour
         OpenPose.OPWrapper.OPEnableImageOutput(true);
 
         UserConfigureOpenPose();
-
         OpenPose.OPWrapper.OPRun();
     }
 

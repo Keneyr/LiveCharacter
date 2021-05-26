@@ -14,7 +14,7 @@ public class VideoMotionExtract : MonoBehaviour
 {
     public void ExtractVideoMotion()
     {
-        Console.Log("Extract Video PoseMotion...");
+        Console.Log("Extract Video PoseMotion，建议使用初始化UI参数值进行运动提取...");
         VideoMotionExtractResult code = VideoPreprocessing.ExtractVideoMotion();
         switch(code)
         {
