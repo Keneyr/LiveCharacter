@@ -38,7 +38,7 @@ public class DrawEdge : MonoBehaviour
 
     public void OnRenderObject()
     {
-        drawEdge();
+        drawEdge(layer);
     }
 
     void CreateLineMaterial()
@@ -68,7 +68,7 @@ public class DrawEdge : MonoBehaviour
     }
     
     
-    static void drawEdge()
+    public static void drawEdge(float layer)
     {
         if (edges.Count == 0)
             return;

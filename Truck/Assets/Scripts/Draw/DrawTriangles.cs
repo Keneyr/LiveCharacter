@@ -17,7 +17,7 @@ public class DrawTriangles : MonoBehaviour
     static Material meshMaterial;
     static Material outlineMaterial;
     RenderTexture renderTargetTexture;
-    static float layer = 1;
+    static float layer = -1;
 
     static RectTransform rt;
     private void Start()
@@ -111,16 +111,7 @@ public class DrawTriangles : MonoBehaviour
         {
             Extra.DrawCircle(new Vector3(points[i].x, points[i].y, layer), pointRadius, 0,outlineMaterial);
         }
-        for (int i = 0; i < points.Count; i++)
-        {
-            Vector3 position1 = new Vector3(points[i].x, points[i].y, layer);
-            Vector3 position2;
-            if ((i+1)==points.Count)
-                position2 = new Vector3(points[0].x, points[0].y, layer);
-            else
-                position2 = new Vector3(points[i+1].x, points[i+1].y, layer);
-            Extra.DrawLine(position1, position2, Vector3.forward, outlineWidth, outlineMaterial);
-        }
+        DrawEdge.drawEdge(layer);
 
     }
     public static void InitMeshIndices(SpriteMeshData spriteMeshData)
