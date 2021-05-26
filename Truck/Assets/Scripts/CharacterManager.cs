@@ -13,7 +13,7 @@ public class CharacterManager : Singleton<CharacterManager>
 
     RectTransform rt;
 
-    public Texture2D tx;
+    public Texture2D tx; //角色图片
     void Awake()
     {
         base.Awake();

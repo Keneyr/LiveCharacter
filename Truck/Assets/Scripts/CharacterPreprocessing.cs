@@ -95,7 +95,7 @@ public class CharacterPreprocessing : MonoBehaviour
                 Vector2[] path = paths[i];
                 for(int j=0;j<path.Length;j++)
                 {
-                    vertices.Add(path[j] + rect.center); //+rect.center?
+                    vertices.Add(new Vector2(path[j].x + rect.center.x, path[j].y - rect.center.y)); //+rect.center?
                     indexEdges.Add(new IndexedEdge(startIndex + j,startIndex + ((j + 1) % path.Length)));
                 }
                 startIndex += path.Length;
@@ -431,7 +431,6 @@ public class CharacterPreprocessing : MonoBehaviour
         CreateSpriteMeshGameObject(); //创建SpriteMeshInstance
         BindBones(); //骨骼绑定，计算权重，自动更新skinnedMeshRenderer
         
-
         DrawSkinning.InitBindingInfo();
         return BoneSkinningResult.Success;
     }
@@ -499,7 +498,8 @@ public class CharacterPreprocessing : MonoBehaviour
                 skinnedMeshRenderer.bones = spriteMeshGO.bones.ConvertAll(bone=>bone.transform).ToArray();
                 if(spriteMeshGO.bones.Count>0)
                 {
-                    skinnedMeshRenderer.rootBone = spriteMeshGO.bones[0].transform;
+                    //skinnedMeshRenderer.rootBone = spriteMeshGO.bones[0].transform;
+                    skinnedMeshRenderer.rootBone = null;
                 }
                 
                 
