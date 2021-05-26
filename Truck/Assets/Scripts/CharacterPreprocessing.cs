@@ -458,6 +458,8 @@ public class CharacterPreprocessing : MonoBehaviour
         {
             gameObject.transform.position = new Vector3(0,0,0);
             spriteMeshGO = gameObject.AddComponent<SpriteMeshGameObject>();
+            //spriteMeshGO.
+
             spriteMeshGO.spriteMeshData = spriteMeshData;
 
             spriteMeshGO.sharedMaterial = spritesDefaultMaterial;
@@ -503,6 +505,14 @@ public class CharacterPreprocessing : MonoBehaviour
         {
             UpdateSpriteMeshDataSharedMesh();
             UnityEngine.Mesh sharedMesh = spriteMeshData.sharedMesh;
+            List<Vector2> uvs = new List<Vector2>();
+            for (int i = 0; i < sharedMesh.uv.Length; i++)
+            {
+                uvs.Add(new Vector2(sharedMesh.uv[i].x * 100.0f, 1+sharedMesh.uv[i].y * 100.0f));
+            }
+            sharedMesh.SetUVs(0, uvs);
+            sharedMesh.RecalculateNormals();
+
             if (sharedMesh.bindposes.Length > 0 && spriteMeshGO.bones.Count > sharedMesh.bindposes.Length)
             {
                 spriteMeshGO.bones = spriteMeshGO.bones.GetRange(0, sharedMesh.bindposes.Length);
@@ -514,10 +524,15 @@ public class CharacterPreprocessing : MonoBehaviour
                 SkinnedMeshRenderer skinnedMeshRenderer = spriteMeshGO.cachedSkinnedRenderer;
                 if(!skinnedMeshRenderer)
                 {
-                    skinnedMeshRenderer = spriteMeshGO.gameObject.AddComponent<SkinnedMeshRenderer>();
+                    skinnedMeshRenderer = spriteMeshGO.gameObject.AddComponent<SkinnedMeshRenderer>();       
                 }
-                skinnedMeshRenderer.sharedMesh = spriteMeshData.sharedMesh;
+                skinnedMeshRenderer.updateWhenOffscreen = true;
+                
+                
                 skinnedMeshRenderer.bones = spriteMeshGO.bones.ConvertAll(bone=>bone.transform).ToArray();
+                skinnedMeshRenderer.sharedMesh = sharedMesh;
+                skinnedMeshRenderer.material = spriteMeshGO.sharedMaterial;
+                //skinnedMeshRenderer.material.mainTexture = 
                 if (spriteMeshGO.bones.Count>0)
                 {
                     //skinnedMeshRenderer.rootBone = spriteMeshGO.bones[0].transform;
