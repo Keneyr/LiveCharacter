@@ -45,17 +45,17 @@ public class CharacterAnimationGeneration : MonoBehaviour
     {
         //默认keyPoints存储的是从0帧到结尾帧，并且帧间隔是2的
         //后期改，判断keyPoints的长度，文件名间隔等
-        float starframe = VideoSliderController.instance.sliderStartFrame.value;
-        float endframe = VideoSliderController.instance.sliderEndFrame.value;
-        float frameInterval = VideoSliderController.instance.sliderInterval.value;
+        //float starframe = VideoSliderController.instance.sliderStartFrame.value;
+        //float endframe = VideoSliderController.instance.sliderEndFrame.value;
+        //float frameInterval = VideoSliderController.instance.sliderInterval.value;
 
-        startIndex = (int)(starframe / frameInterval); //比如初始帧是8，那么在队列里的索引就是4
-        endIndex = (int)(endframe / frameInterval);
+        //startIndex = (int)(starframe / frameInterval); //比如初始帧是8，那么在队列里的索引就是4
+        //endIndex = (int)(endframe / frameInterval);
 
-        if(endIndex < VideoPreprocessing.calibratedSkeletonQueue.Count) //否则越界
-        {
-            StartDriving = true;
-        }
+        //if(endIndex < VideoPreprocessing.calibratedSkeletonQueue.Count) //否则越界
+        //{
+        StartDriving = true;
+        //}
     }
     static void ApplyCalibratedMotionData2InitialCharacter()
     {

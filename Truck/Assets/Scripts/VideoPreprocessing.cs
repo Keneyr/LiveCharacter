@@ -137,10 +137,15 @@ public static class VideoPreprocessing
         {
             return -1;   
         }
+        float[] errors = new float[calibratedSkeletonQueue.Count];
+        int i = 0;
+        Queue<Pose> tmpcalibratedSkeletonQueue = new Queue<Pose>(calibratedSkeletonQueue);
+
+        //处理临时变量，不应该处理所拥有的全局性变量
         List<SkeletonLine> characterSkeleton = characterPose.m_bones;
-        while (calibratedSkeletonQueue.Count > 0)
+        while (tmpcalibratedSkeletonQueue.Count > 0)
         {
-            Pose pose = calibratedSkeletonQueue.Dequeue();
+            Pose pose = tmpcalibratedSkeletonQueue.Dequeue();
             //List<SkeletonLine> videoSkeleton = pose.m_bones;
             float error = 0f;
 #if false
@@ -160,8 +165,53 @@ public static class VideoPreprocessing
                 flg = index;
             }
             index += (int)VideoSliderController.instance.sliderInterval.value;
+
+            errors[i] = error;
+            i++;
         }
+
+        //添加实验：显示Error分布图表
+        //TestShowLineChart(errors);
         return flg;
+    }
+
+    //实验结果，方便查看姿态检索时的error值的分布情况
+    static void TestShowLineChart(float[] errors)
+    {
+        GameObject gameObject = new GameObject("errors");
+        var chart = gameObject.GetComponent<XCharts.LineChart>();
+        if (chart == null)
+        {
+            chart = gameObject.AddComponent<XCharts.LineChart>();
+            chart.SetSize(580, 300);//代码动态添加图表需要设置尺寸，或直接操作chart.rectTransform
+        }
+        //设置标题
+        chart.title.show = true;
+        chart.title.text = "Pose Similiraty Error";
+        //设置提示框和图例是否显示
+        chart.tooltip.show = true;
+        chart.legend.show = false;
+        //设置是否使用双坐标轴和坐标轴类型
+        chart.xAxes[0].show = true;
+        chart.xAxes[1].show = false;
+        chart.yAxes[0].show = true;
+        chart.yAxes[1].show = false;
+        chart.xAxes[0].type = XCharts.Axis.AxisType.Value;
+        chart.yAxes[0].type = XCharts.Axis.AxisType.Value;
+
+        //设置坐标轴分割线
+        chart.xAxes[0].splitNumber = 10;
+        chart.xAxes[0].boundaryGap = true;
+        //清空数据，添加Line类型的Serie用于接收数据
+        chart.RemoveData();
+        chart.AddSerie(XCharts.SerieType.Line);
+
+        for (int i = 0; i < errors.Length; i += 2)
+        {
+            chart.AddXAxisData("",i);
+            chart.AddData(0, errors[i]);
+            //chart.AddData(0, Random.Range(10, 20));
+        }
     }
 }
 
