@@ -180,16 +180,6 @@ public class Extra
             camera.orthographicSize = expandScale * height / 2;
     }
 
-    public static void SetSkeletonCamera(Camera camera, float layer, float width, float height, RectTransform rt, float expandScale = 1.1f)
-    {
-        camera.transform.position = new Vector3(width / 2,- height / 2, layer);
-        camera.farClipPlane = 0.1f;
-        camera.nearClipPlane = -0.1f;
-        if (width / height > rt.sizeDelta.x / rt.sizeDelta.y) //小幕布的尺寸大小
-            camera.orthographicSize = expandScale * width / 2;
-        else
-            camera.orthographicSize = expandScale * height / 2;
-    }
     static float GetBoneRadius(Bone2D bone)
     {
         return Mathf.Min(bone.localLength / 20f, 0.125f * 1f);

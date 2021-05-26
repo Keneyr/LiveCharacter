@@ -151,7 +151,7 @@ public class DrawSkeleton : MonoBehaviour
         Bones = FindComponentsOfType<Bone2D>().ToList(); //全部物体中是Bone2D的
 
         //set camera
-        Extra.SetSkeletonCamera(SkeletonCamera,layer, poseTexture.width / 100, poseTexture.height / 100, rt);
+        Extra.SetInnerCamera(SkeletonCamera,layer, poseTexture.width / 100, poseTexture.height / 100, rt);
     } 
     static T[] FindComponentsOfType<T>() where T: Component
     {
