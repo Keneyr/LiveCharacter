@@ -35,12 +35,9 @@ public class CharacterManager : Singleton<CharacterManager>
 
         rawImage.texture = tx;
         Console.Log("image width,height is: " + tx.width + ", " + tx.height);
-
-        Extra.AutoFill(tx,rt);
-
         Rect rect = new Rect(0,0, tx.width, tx.height);
         CameraGroup.instance.GenerateRenderTexture(rect);
-        
+        CameraGroup.instance.SetRectTransfrom(rawImage);
         return ImportCharacterResult.Success;
     }
 

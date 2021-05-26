@@ -12,6 +12,7 @@ public class CameraGroup : Singleton<CameraGroup>
     RawImage triangulateImg;
     RawImage skeletonImg;
     RawImage skinningImg;
+    RawImage mainCharaterImg;
     // Start is called before the first frame update
     void Start()
     {
@@ -48,11 +49,29 @@ public class CameraGroup : Singleton<CameraGroup>
         triangulateCamera.orthographicSize = height / 200;
         skeletonCamera.orthographicSize = height / 200;
         skinningCamera.orthographicSize = height / 200;
+
+      
+        SetRectTransfrom(contourImg);
+        SetRectTransfrom(triangulateImg);
+        SetRectTransfrom(skeletonImg);
+        SetRectTransfrom(skinningImg);
+
         //contourImg
         //if (width / height > rt.sizeDelta.x / rt.sizeDelta.y) //小幕布的尺寸大小
         //    camera.orthographicSize = width / 2;
         //else
         //    camera.orthographicSize = height / 2;
+    }
+
+    public void SetRectTransfrom(RawImage img) {
+        float xscaler = img.rectTransform.rect.height * rect.width * 4/ (img.rectTransform.rect.width * rect.height*3);
+        float yscaler = 1.0f;
+        if (xscaler > 1)
+        {
+            yscaler /= xscaler;
+            xscaler = 1;
+        }
+        img.transform.localScale = new Vector3(xscaler, yscaler, 1);
     }
 
     public void GenerateRenderTexture(Rect rect)

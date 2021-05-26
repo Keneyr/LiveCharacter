@@ -114,11 +114,13 @@ public class DrawSkeleton : MonoBehaviour
         poseTexture.LoadImage(Extra.GetImageByte(renderImagePath));
         Sprite sp = Sprite.Create(poseTexture, new Rect(0, 0, poseTexture.width, poseTexture.height), Vector2.zero);
         bgSprite.GetComponent<SpriteRenderer>().sprite = sp;
+        bgSprite.GetComponent<SpriteRenderer>().material = new Material(Shader.Find("Unlit/Transparent"));
         bgSprite.transform.position = new Vector3(0, -poseTexture.height / 100.0f, layer);
+        
 
 
         //Extra.AutoFill(poseTexture, rt);
-        
+
     }
     
     public static void DrawSkeletonBone2D()
