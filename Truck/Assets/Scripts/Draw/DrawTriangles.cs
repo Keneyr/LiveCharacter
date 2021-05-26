@@ -112,8 +112,10 @@ public class DrawTriangles : MonoBehaviour
             Extra.DrawCircle(new Vector3(points[i].x, points[i].y, layer), pointRadius, 0,Color.cyan,outlineMaterial);
         }
         DrawEdge.drawEdge(layer);
-
     }
+
+    
+
     public static void InitMeshIndices(SpriteMeshData spriteMeshData)
     {
         if (!spriteMeshData)
@@ -125,22 +127,15 @@ public class DrawTriangles : MonoBehaviour
         indices.Clear();
         points.Clear();
         //calculate rect
-        Rect rect = new Rect();
-        for(int i=0;i<spriteMeshData.vertices.Length;i++)
-        {
-            rect.yMax = Mathf.Max(rect.yMax, spriteMeshData.vertices[i].y);
-            rect.xMax = Mathf.Max(rect.xMax, spriteMeshData.vertices[i].x);
-            rect.yMin = Mathf.Min(rect.yMin, spriteMeshData.vertices[i].y);
-            rect.xMin = Mathf.Min(rect.xMin, spriteMeshData.vertices[i].x);
-        }
+        
         //Init data
         indices = spriteMeshData.indices.ToList();
         points = spriteMeshData.vertices.ToList();
 
         //set camera
-        Extra.SetInnerCamera(triangulateCamera,layer, rect, rt, expandScale);
+        Extra.SetInnerCamera(triangulateCamera,layer, Extra.rect, rt);
 
-        lineWidth = rect.height * 0.005f;
+        lineWidth = Extra.rect.height * 0.005f;
 
     }
 }

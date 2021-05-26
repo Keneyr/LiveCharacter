@@ -100,6 +100,7 @@ public class DrawEdge : MonoBehaviour
             rect.yMin = Mathf.Min(rect.yMin, spriteMeshData.vertices[i].y);
             rect.xMin = Mathf.Min(rect.xMin, spriteMeshData.vertices[i].x);
         }
+        Extra.rect = rect;
         //Init data
         m_TexVertices = spriteMeshData.vertices.ToList();
         nodes = m_TexVertices.ConvertAll(v => Node.Create(m_TexVertices.IndexOf(v)));

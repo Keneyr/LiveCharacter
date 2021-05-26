@@ -17,6 +17,8 @@ public class Extra
     //const float lineWidth = 0.05f;
     static Vector3[] s_array;
     static Vector3[] s_circleArray;
+
+    public static Rect rect;
     public static void DrawLine(Vector3 p1, Vector3 p2, Vector3 normal, float width, Color color, Material mat)
     {
         DrawLine(p1, p2, normal, width, width, color, mat);
@@ -203,7 +205,7 @@ public class Extra
     }
     public static void SetInnerCamera(Camera camera, float layer,float width, float height, RectTransform rt,float expandScale = 1.1f)
     {
-        camera.transform.position = new Vector3(width / 2, height / 2, layer);
+        camera.transform.position = new Vector3(width / 2, -height / 2, layer);
         camera.farClipPlane = 0.1f;
         camera.nearClipPlane = -0.1f;
         if (width / height > rt.sizeDelta.x / rt.sizeDelta.y) //小幕布的尺寸大小
