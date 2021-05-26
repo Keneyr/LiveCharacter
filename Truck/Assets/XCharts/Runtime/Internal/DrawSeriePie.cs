@@ -59,7 +59,7 @@ namespace XCharts
                 for (int n = 0; n < data.Count; n++)
                 {
                     var serieData = data[n];
-                    if (!serieData.canShowLabel || serie.IsIgnoreValue(serieData.GetData(1)))
+                    if (!serieData.canShowLabel || serie.IsIgnoreValue(serieData))
                     {
                         serieData.SetLabelActive(false);
                         continue;
@@ -75,7 +75,7 @@ namespace XCharts
 
         public bool CheckTootipArea(Vector2 local)
         {
-            if (!PointerIsInPieSerie(chart.series, local)) return false;
+            if (!chart.series.Contains(SerieType.Pie)) return false;
             bool selected = false;
             chart.tooltip.runtimeDataIndex.Clear();
             foreach (var serie in chart.series.list)
@@ -103,7 +103,7 @@ namespace XCharts
                 chart.tooltip.SetActive(false);
                 chart.RefreshChart();
             }
-            return true;
+            return selected;
         }
 
         public bool OnLegendButtonClick(int index, string legendName, bool show)
@@ -188,6 +188,7 @@ namespace XCharts
                 zeroReplaceValue = totalDegree / data.Count;
                 serie.runtimeDataMax = zeroReplaceValue;
                 serie.runtimePieDataTotal = 360;
+                dataTotalFilterMinAngle = 360;
             }
             else
             {
@@ -493,8 +494,6 @@ namespace XCharts
             }
         }
 
-
-
         private void DrawPieLabel(Serie serie, int dataIndex, SerieData serieData, Color serieColor)
         {
             if (serieData.labelObject == null) return;
@@ -544,7 +543,8 @@ namespace XCharts
                 {
                     var value = serieData.data[1];
                     var total = serie.yTotal;
-                    var content = SerieLabelHelper.GetFormatterContent(serie, serieData, value, total, serieLabel);
+                    var content = SerieLabelHelper.GetFormatterContent(serie, serieData, value, total,
+                        serieLabel, serieColor);
                     if (serieData.labelObject.SetText(content)) chart.RefreshPainter(serie);
                 }
                 else

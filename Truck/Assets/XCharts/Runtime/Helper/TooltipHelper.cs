@@ -10,7 +10,7 @@ using UnityEngine;
 
 namespace XCharts
 {
-    internal static class TooltipHelper
+    public static class TooltipHelper
     {
         private static void InitScatterTooltip(ref StringBuilder sb, Tooltip tooltip, Serie serie, int index,
             ChartTheme theme)
@@ -146,7 +146,8 @@ namespace XCharts
                             else
                             {
                                 string content = itemFormatter;
-                                FormatterHelper.ReplaceSerieLabelContent(ref content, numericFormatter, value, total, serie.name, sd.name);
+                                FormatterHelper.ReplaceSerieLabelContent(ref content, numericFormatter, value, total, serie.name,
+                                    sd.name, theme.GetColor(i));
                                 sb.Append(content);
                             }
                         }
@@ -180,21 +181,22 @@ namespace XCharts
                     else
                     {
                         string content = itemFormatter2;
-                        FormatterHelper.ReplaceSerieLabelContent(ref content, numericFormatter, value2, total2, serie.name, serieData.name);
+                        FormatterHelper.ReplaceSerieLabelContent(ref content, numericFormatter, value2, total2, serie.name,
+                            serieData.name, theme.GetColor(serie.index));
                         sb.Append(content);
                     }
-
                     break;
             }
         }
 
-        private static void InitCoordinateTooltip(ref StringBuilder sb, Tooltip tooltip, Serie serie, int index,
+        public static void InitCoordinateTooltip(ref StringBuilder sb, Tooltip tooltip, Serie serie, int index,
             ChartTheme theme, bool isCartesian, DataZoom dataZoom = null)
         {
             string key = serie.name;
             float xValue, yValue;
             serie.GetXYData(index, dataZoom, out xValue, out yValue);
             var isIngore = serie.IsIgnorePoint(index);
+            if(isIngore) return;
             var serieData = serie.GetSerieData(index, dataZoom);
             var numericFormatter = GetItemNumericFormatter(tooltip, serie, serieData);
             if (isCartesian)
@@ -232,16 +234,8 @@ namespace XCharts
             }
         }
 
-        private static void InitGanttTooltip(ref StringBuilder sb, Tooltip tooltip, Serie serie, int index,
-           ChartTheme theme)
-        {
-            //if (tooltip.runtimeGridIndex >= 0) return;
-            //if (serie.index != index || serie.type != SerieType.Gantt) return;
-            sb.Append(serie.name);
-        }
-
         private static void InitDefaultContent(ref StringBuilder sb, Tooltip tooltip, Serie serie, int index,
-            ChartTheme theme = null, DataZoom dataZoom = null, bool isCartesian = false,
+            BaseChart chart, DataZoom dataZoom = null, bool isCartesian = false,
             Radar radar = null)
         {
             switch (serie.type)
@@ -249,28 +243,28 @@ namespace XCharts
                 case SerieType.Line:
                 case SerieType.Bar:
                 case SerieType.Candlestick:
-                    InitCoordinateTooltip(ref sb, tooltip, serie, index, theme, isCartesian, dataZoom);
+                    InitCoordinateTooltip(ref sb, tooltip, serie, index, chart.theme, isCartesian, dataZoom);
                     break;
                 case SerieType.Scatter:
                 case SerieType.EffectScatter:
-                    InitScatterTooltip(ref sb, tooltip, serie, index, theme);
+                    InitScatterTooltip(ref sb, tooltip, serie, index, chart.theme);
                     break;
                 case SerieType.Radar:
-                    InitRadarTooltip(ref sb, tooltip, serie, radar, theme);
+                    InitRadarTooltip(ref sb, tooltip, serie, radar, chart.theme);
                     break;
                 case SerieType.Pie:
-                    InitPieTooltip(ref sb, tooltip, serie, index, theme);
+                    InitPieTooltip(ref sb, tooltip, serie, index, chart.theme);
                     break;
                 case SerieType.Ring:
-                    InitRingTooltip(ref sb, tooltip, serie, index, theme);
+                    InitRingTooltip(ref sb, tooltip, serie, index, chart.theme);
                     break;
                 case SerieType.Heatmap:
                     break;
                 case SerieType.Gauge:
-                    InitGaugeTooltip(ref sb, tooltip, serie, index, theme);
+                    InitGaugeTooltip(ref sb, tooltip, serie, index, chart.theme);
                     break;
-                case SerieType.Gantt:
-                    InitGanttTooltip(ref sb, tooltip, serie, index, theme);
+                case SerieType.Custom:
+                    chart.InitCustomSerieTooltip(ref sb, serie, index);
                     break;
             }
         }
@@ -400,7 +394,7 @@ namespace XCharts
                             if (string.IsNullOrEmpty(itemFormatter))
                             {
                                 if (!first) sb.Append(FormatterHelper.PH_NN);
-                                InitDefaultContent(ref sb, tooltip, serie, dataIndex, chart.theme, dataZoom, isCartesian, radar);
+                                InitDefaultContent(ref sb, tooltip, serie, dataIndex, chart, dataZoom, isCartesian, radar);
                                 first = false;
                                 continue;
                             }
@@ -448,7 +442,7 @@ namespace XCharts
                             if (string.IsNullOrEmpty(itemFormatter) || serie.type == SerieType.Radar)
                             {
                                 if (!first) sb.Append(FormatterHelper.PH_NN);
-                                InitDefaultContent(ref sb, tooltip, serie, dataIndex, chart.theme, dataZoom, isCartesian, radar);
+                                InitDefaultContent(ref sb, tooltip, serie, dataIndex, chart, dataZoom, isCartesian, radar);
                                 first = false;
                                 continue;
                             }

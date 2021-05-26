@@ -1,12 +1,10 @@
-/************************************************/
-/*                                              */
-/*     Copyright (c) 2018 - 2021 monitor1394    */
-/*     https://github.com/monitor1394           */
-/*                                              */
-/************************************************/
-using System.Text;
+/******************************************/
+/*                                        */
+/*     Copyright (c) 2021 monitor1394     */
+/*     https://github.com/monitor1394     */
+/*                                        */
+/******************************************/
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace XCharts
 {
@@ -39,12 +37,12 @@ namespace XCharts
                 if (axis.interval > 0)
                 {
                     if (coordinateWid <= 0) return 0;
-                    int num = Mathf.CeilToInt(axis.runtimeMinMaxRange / axis.interval);
+                    int num = (int)(axis.runtimeMinMaxRange / axis.interval);
                     int maxNum = Mathf.CeilToInt(coordinateWid / 15);
                     if (num > maxNum)
                     {
                         axis.interval *= 2;
-                        num = Mathf.CeilToInt(axis.runtimeMinMaxRange / axis.interval);
+                        num = (int)(axis.runtimeMinMaxRange / axis.interval);
                     }
                     return num;
                 }
@@ -58,12 +56,12 @@ namespace XCharts
                 if (axis.interval > 0)
                 {
                     if (coordinateWid <= 0) return 0;
-                    int num = Mathf.CeilToInt(axis.runtimeMinMaxRange / axis.interval);
+                    int num = (int)(axis.runtimeMinMaxRange / axis.interval);
                     int maxNum = Mathf.CeilToInt(coordinateWid / 15);
                     if (num > maxNum)
                     {
                         axis.interval *= 2;
-                        num = Mathf.CeilToInt(axis.runtimeMinMaxRange / axis.interval);
+                        num = (int)(axis.runtimeMinMaxRange / axis.interval);
                     }
                     return num;
                 }
@@ -79,25 +77,15 @@ namespace XCharts
             else if (axis.type == Axis.AxisType.Category)
             {
                 int dataCount = axis.GetDataList(dataZoom).Count;
+                if (!axis.boundaryGap)
+                {
+                    dataCount -= 1;
+                }
                 if (axis.splitNumber <= 0 || axis.splitNumber > dataCount) return dataCount;
                 if (dataCount >= axis.splitNumber * 2) return axis.splitNumber;
                 else return dataCount;
             }
             return 0;
-        }
-
-        /// <summary>
-        /// 获得分割段的宽度
-        /// </summary>
-        /// <param name="coordinateWidth"></param>
-        /// <param name="dataZoom"></param>
-        /// <returns></returns>
-        public static float GetSplitWidth(Axis axis, float coordinateWidth, DataZoom dataZoom)
-        {
-            int split = GetSplitNumber(axis, coordinateWidth, dataZoom);
-            int segment = (axis.boundaryGap ? split : split - 1);
-            segment = segment <= 0 ? 1 : segment;
-            return coordinateWidth / segment;
         }
 
         /// <summary>
@@ -124,7 +112,7 @@ namespace XCharts
         /// <param name="maxValue"></param>
         /// <param name="dataZoom"></param>
         /// <returns></returns>
-        internal static string GetLabelName(Axis axis, float coordinateWidth, int index, float minValue, float maxValue,
+        public static string GetLabelName(Axis axis, float coordinateWidth, int index, float minValue, float maxValue,
             DataZoom dataZoom, bool forcePercent)
         {
             int split = GetSplitNumber(axis, coordinateWidth, dataZoom);
@@ -149,7 +137,6 @@ namespace XCharts
                     minValue = -minValue;
                     maxValue = -maxValue;
                 }
-
                 if (forcePercent) return string.Format("{0}%", (int)value);
                 else return axis.axisLabel.GetFormatterContent(value, minValue, maxValue);
             }
@@ -185,19 +172,33 @@ namespace XCharts
             var showData = axis.GetDataList(dataZoom);
             int dataCount = showData.Count;
             if (dataCount <= 0) return "";
-            int rate = Mathf.RoundToInt(dataCount * 1f / split);
-            int newIndex = index * rate;
-            if (newIndex <= dataCount - 1)
+            int rate = axis.boundaryGap ? (dataCount / split) : (dataCount - 1) / split;
+            if (rate == 0) rate = 1;
+            if (axis.insertDataToHead)
             {
-                return axis.axisLabel.GetFormatterContent(showData[newIndex]);
+                if (index > 0)
+                {
+                    var residue = (dataCount - 1) - split * rate;
+                    var newIndex = residue + (index - 1) * rate;
+                    if (newIndex < 0) newIndex = 0;
+                    return axis.axisLabel.GetFormatterContent(showData[newIndex]);
+                }
+                else
+                {
+                    if (axis.boundaryGap && coordinateWidth / dataCount > 5) return string.Empty;
+                    else return axis.axisLabel.GetFormatterContent(showData[0]);
+                }
             }
             else
             {
-                if (rate == 1) return string.Empty;
-                else if (axis.boundaryGap && coordinateWidth / dataCount > 10) return string.Empty;
+                int newIndex = index * rate;
+                if (newIndex < dataCount)
+                {
+                    return axis.axisLabel.GetFormatterContent(showData[newIndex]);
+                }
                 else
                 {
-                    if ((index - 1) * rate > dataCount - 1) return string.Empty;
+                    if (axis.boundaryGap && coordinateWidth / dataCount > 5) return string.Empty;
                     else return axis.axisLabel.GetFormatterContent(showData[dataCount - 1]);
                 }
             }
@@ -208,17 +209,25 @@ namespace XCharts
         /// </summary>
         /// <param name="dataZoom"></param>
         /// <returns></returns>
-        internal static int GetScaleNumber(Axis axis, float coordinateWidth, DataZoom dataZoom = null)
+        public static int GetScaleNumber(Axis axis, float coordinateWidth, DataZoom dataZoom = null)
         {
             int splitNum = GetSplitNumber(axis, coordinateWidth, dataZoom);
+            if (splitNum == 0) return 0;
             if (axis.IsCategory())
             {
-                var data = axis.GetDataList();
-                int tick = Mathf.RoundToInt(data.Count * 1f / splitNum);
+                var data = axis.GetDataList(dataZoom);
+                var scaleNum = 0;
+
                 if (axis.boundaryGap)
-                    return Mathf.CeilToInt(data.Count * 1.0f / tick) + 1;
+                {
+                    scaleNum = data.Count % splitNum == 0 ? splitNum + 1 : splitNum + 2;
+                }
                 else
-                    return Mathf.CeilToInt(data.Count * 1.0f / tick);
+                {
+                    if (data.Count < splitNum) scaleNum = splitNum;
+                    else scaleNum = data.Count % splitNum == 0 ? splitNum : splitNum + 1;
+                }
+                return scaleNum;
             }
             else
             {
@@ -232,7 +241,7 @@ namespace XCharts
         /// <param name="coordinateWidth"></param>
         /// <param name="dataZoom"></param>
         /// <returns></returns>
-        internal static float GetScaleWidth(Axis axis, float coordinateWidth, int index, DataZoom dataZoom = null)
+        public static float GetScaleWidth(Axis axis, float coordinateWidth, int index, DataZoom dataZoom = null)
         {
             if (index < 0) return 0;
             int num = GetScaleNumber(axis, coordinateWidth, dataZoom);
@@ -241,24 +250,52 @@ namespace XCharts
             if (axis.type == Axis.AxisType.Value && axis.interval > 0)
             {
                 if (axis.runtimeMinMaxRange <= 0) return 0;
-                if (index >= splitNum) return coordinateWidth - (index - 1) * axis.interval * coordinateWidth / axis.runtimeMinMaxRange;
-                else return axis.interval * coordinateWidth / axis.runtimeMinMaxRange;
+                if (index >= splitNum)
+                {
+                    return (float)(coordinateWidth - (index - 1) * axis.interval * coordinateWidth / axis.runtimeMinMaxRange);
+                }
+                else
+                {
+                    return (float)(axis.interval * coordinateWidth / axis.runtimeMinMaxRange);
+                }
             }
             else
             {
-                var data = axis.GetDataList();
+                var data = axis.GetDataList(dataZoom);
                 if (axis.IsCategory() && data.Count > 0)
                 {
-                    int tick = Mathf.RoundToInt(data.Count * 1f / splitNum);
                     var count = axis.boundaryGap ? data.Count : data.Count - 1;
+                    int tick = count / splitNum;
                     if (count <= 0) return 0;
                     var each = coordinateWidth / count;
-                    if (index >= num - 1)
+                    if (axis.insertDataToHead)
                     {
-                        if (axis.axisTick.alignWithLabel) return each * tick;
-                        else return coordinateWidth - each * tick * (index - 1);
+                        var max = axis.boundaryGap ? splitNum : splitNum - 1;
+                        if (index == 1)
+                        {
+                            if (axis.axisTick.alignWithLabel) return each * tick;
+                            else return coordinateWidth - each * tick * max;
+                        }
+                        else
+                        {
+                            if (count < splitNum) return each;
+                            else return each * (count / splitNum);
+                        }
                     }
-                    else return each * tick;
+                    else
+                    {
+                        var max = axis.boundaryGap ? num - 1 : num;
+                        if (index >= max)
+                        {
+                            if (axis.axisTick.alignWithLabel) return each * tick;
+                            else return coordinateWidth - each * tick * (index - 1);
+                        }
+                        else
+                        {
+                            if (count < splitNum) return each;
+                            else return each * (count / splitNum);
+                        }
+                    }
                 }
                 else
                 {
@@ -268,9 +305,9 @@ namespace XCharts
             }
         }
 
-        internal static float GetEachWidth(Axis axis, float coordinateWidth, DataZoom dataZoom = null)
+        public static float GetEachWidth(Axis axis, float coordinateWidth, DataZoom dataZoom = null)
         {
-            var data = axis.GetDataList();
+            var data = axis.GetDataList(dataZoom);
             if (data.Count > 0)
             {
                 var count = axis.boundaryGap ? data.Count : data.Count - 1;
@@ -288,7 +325,7 @@ namespace XCharts
         /// </summary>
         /// <param name="minValue"></param>
         /// <param name="maxValue"></param>
-        internal static void AdjustMinMaxValue(Axis axis, ref float minValue, ref float maxValue, bool needFormat, int ceilRate = 0)
+        public static void AdjustMinMaxValue(Axis axis, ref float minValue, ref float maxValue, bool needFormat, int ceilRate = 0)
         {
             if (axis.type == Axis.AxisType.Log)
             {
@@ -346,7 +383,7 @@ namespace XCharts
                         break;
                 }
             }
-            var tempRange = maxValue - minValue;
+            double tempRange = maxValue - minValue;
             if (axis.runtimeMinMaxRange != tempRange)
             {
                 axis.runtimeMinMaxRange = tempRange;
@@ -357,7 +394,7 @@ namespace XCharts
             }
         }
 
-        internal static bool NeedShowSplit(Axis axis)
+        public static bool NeedShowSplit(Axis axis)
         {
             if (!axis.show) return false;
             if (axis.IsCategory() && axis.GetDataList().Count <= 0) return false;
@@ -365,7 +402,7 @@ namespace XCharts
             else return true;
         }
 
-        internal static void AdjustCircleLabelPos(ChartText txt, Vector3 pos, Vector3 cenPos, float txtHig, Vector3 offset)
+        public static void AdjustCircleLabelPos(ChartText txt, Vector3 pos, Vector3 cenPos, float txtHig, Vector3 offset)
         {
             var txtWidth = txt.GetPreferredWidth();
             var sizeDelta = new Vector2(txtWidth, txt.GetPreferredHeight());
@@ -387,7 +424,29 @@ namespace XCharts
             txt.SetLocalPosition(pos + offset);
         }
 
-        internal static void AdjustRadiusAxisLabelPos(ChartText txt, Vector3 pos, Vector3 cenPos, float txtHig, Vector3 offset)
+        public static void AdjustCircleLabelPos(ChartLabel txt, Vector3 pos, Vector3 cenPos, float txtHig, Vector3 offset)
+        {
+            var txtWidth = txt.label.GetPreferredWidth();
+            var sizeDelta = new Vector2(txtWidth, txt.label.GetPreferredHeight());
+            txt.label.SetSizeDelta(sizeDelta);
+            var diff = pos.x - cenPos.x;
+            if (diff < -1f) //left
+            {
+                pos = new Vector3(pos.x - txtWidth / 2, pos.y);
+            }
+            else if (diff > 1f) //right
+            {
+                pos = new Vector3(pos.x + txtWidth / 2, pos.y);
+            }
+            else
+            {
+                float y = pos.y > cenPos.y ? pos.y + txtHig / 2 : pos.y - txtHig / 2;
+                pos = new Vector3(pos.x, y);
+            }
+            txt.SetPosition(pos + offset);
+        }
+
+        public static void AdjustRadiusAxisLabelPos(ChartText txt, Vector3 pos, Vector3 cenPos, float txtHig, Vector3 offset)
         {
             var txtWidth = txt.GetPreferredWidth();
             var sizeDelta = new Vector2(txtWidth, txt.GetPreferredHeight());

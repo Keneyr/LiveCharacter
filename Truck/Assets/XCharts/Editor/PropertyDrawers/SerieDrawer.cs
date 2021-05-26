@@ -21,7 +21,9 @@ namespace XCharts
         {
             pos.width -= 9;
             base.OnGUI(pos, prop, label);
+            var chart = prop.serializedObject.targetObject as BaseChart;
             var type = prop.FindPropertyRelative("m_Type");
+            var serieType = (SerieType)type.enumValueIndex;
             if (!MakeFoldout(prop, "m_Show"))
             {
                 var orderButton = 48;
@@ -29,16 +31,20 @@ namespace XCharts
                 var drawRect = pos;
                 drawRect.x += EditorGUIUtility.labelWidth + gap;
                 drawRect.width = pos.width - drawRect.x + ChartEditorHelper.BOOL_WIDTH - orderButton;
-                EditorGUI.PropertyField(drawRect, type, GUIContent.none);
+                type.enumValueIndex = EditorGUI.Popup(drawRect, (int)serieType, GetChartSerieTypeNames(chart));
             }
             else
             {
-                var chart = prop.serializedObject.targetObject as BaseChart;
                 m_IsPolar = chart is PolarChart;
-                var serieType = (SerieType)type.enumValueIndex;
                 ++EditorGUI.indentLevel;
-                PropertyField(prop, "m_Type");
+
+                type.enumValueIndex = EditorGUI.Popup(m_DrawRect, "Type", (int)serieType, GetChartSerieTypeNames(chart));
+                var hig = EditorGUI.GetPropertyHeight(prop);
+                m_DrawRect.y += hig;
+                m_Heights[m_KeyName] += hig;
+
                 PropertyField(prop, "m_Name");
+                PropertyField(prop, "m_InsertDataToHead");
                 switch (serieType)
                 {
                     case SerieType.Line:
@@ -68,10 +74,7 @@ namespace XCharts
                         PropertyField(prop, "m_Symbol");
                         PropertyField(prop, "m_LineStyle");
                         PropertyField(prop, "m_LineArrow");
-                        PropertyField(prop, "m_ItemStyle");
                         PropertyField(prop, "m_AreaStyle");
-                        PropertyField(prop, "m_Label");
-                        PropertyField(prop, "m_Emphasis");
                         break;
                     case SerieType.Bar:
                         PropertyField(prop, "m_Stack");
@@ -99,9 +102,6 @@ namespace XCharts
                         PropertyField(prop, "m_ShowAsPositiveNumber");
                         PropertyField(prop, "m_Large");
                         PropertyField(prop, "m_LargeThreshold");
-                        PropertyField(prop, "m_ItemStyle");
-                        PropertyField(prop, "m_Label");
-                        PropertyField(prop, "m_Emphasis");
                         break;
                     case SerieType.Pie:
                         PropertyField(prop, "m_RoseType");
@@ -113,9 +113,6 @@ namespace XCharts
                         PropertyField(prop, "m_Ignore");
                         PropertyField(prop, "m_IgnoreValue");
                         PropertyField(prop, "m_AvoidLabelOverlap");
-                        PropertyField(prop, "m_ItemStyle");
-                        PropertyField(prop, "m_Label");
-                        PropertyField(prop, "m_Emphasis");
                         break;
                     case SerieType.Ring:
                         PropertyTwoFiled(prop, "m_Center");
@@ -125,34 +122,22 @@ namespace XCharts
                         PropertyField(prop, "m_RoundCap");
                         PropertyField(prop, "m_Clockwise");
                         PropertyField(prop, "m_TitleStyle");
-                        PropertyField(prop, "m_ItemStyle");
-                        PropertyField(prop, "m_Label");
-                        PropertyField(prop, "m_Emphasis");
                         break;
                     case SerieType.Radar:
                         PropertyField(prop, "m_RadarType");
                         PropertyField(prop, "m_RadarIndex");
                         PropertyField(prop, "m_Symbol");
                         PropertyField(prop, "m_LineStyle");
-                        PropertyField(prop, "m_ItemStyle");
                         PropertyField(prop, "m_AreaStyle");
-                        PropertyField(prop, "m_Label");
-                        PropertyField(prop, "m_Emphasis");
                         break;
                     case SerieType.Scatter:
                     case SerieType.EffectScatter:
                         PropertyField(prop, "m_Clip");
                         PropertyField(prop, "m_Symbol");
-                        PropertyField(prop, "m_ItemStyle");
-                        PropertyField(prop, "m_Label");
-                        PropertyField(prop, "m_Emphasis");
                         break;
                     case SerieType.Heatmap:
                         PropertyField(prop, "m_Ignore");
                         PropertyField(prop, "m_IgnoreValue");
-                        PropertyField(prop, "m_ItemStyle");
-                        PropertyField(prop, "m_Label");
-                        PropertyField(prop, "m_Emphasis");
                         break;
                     case SerieType.Gauge:
                         PropertyField(prop, "m_GaugeType");
@@ -167,9 +152,6 @@ namespace XCharts
                         PropertyField(prop, "m_TitleStyle");
                         PropertyField(prop, "m_GaugeAxis");
                         PropertyField(prop, "m_GaugePointer");
-                        PropertyField(prop, "m_ItemStyle");
-                        PropertyField(prop, "m_Label");
-                        PropertyField(prop, "m_Emphasis");
                         break;
                     case SerieType.Liquid:
                         PropertyField(prop, "m_VesselIndex");
@@ -179,8 +161,6 @@ namespace XCharts
                         PropertyField(prop, "m_WaveHeight");
                         PropertyField(prop, "m_WaveSpeed");
                         PropertyField(prop, "m_WaveOffset");
-                        PropertyField(prop, "m_ItemStyle");
-                        PropertyField(prop, "m_Label");
                         break;
                     case SerieType.Candlestick:
                         PropertyField(prop, "m_XAxisIndex");
@@ -193,26 +173,54 @@ namespace XCharts
                         PropertyField(prop, "m_ShowAsPositiveNumber");
                         PropertyField(prop, "m_Large");
                         PropertyField(prop, "m_LargeThreshold");
-                        PropertyField(prop, "m_ItemStyle");
-                        PropertyField(prop, "m_Label");
-                        PropertyField(prop, "m_Emphasis");
                         break;
-                    case SerieType.Gantt:
-                        PropertyField(prop, "m_XAxisIndex");
-                        PropertyField(prop, "m_YAxisIndex");
-                        PropertyField(prop, "m_BarWidth");
-                        PropertyField(prop, "m_Clip");
-                        PropertyField(prop, "m_Large");
-                        PropertyField(prop, "m_LargeThreshold");
-                        PropertyField(prop, "m_ItemStyle");
-                        PropertyField(prop, "m_Label");
-                        PropertyField(prop, "m_Emphasis");
+                    case SerieType.Custom:
+                        var fileds = chart.GetCustomSerieInspectorShowFileds();
+                        if (fileds != null && fileds.Length > 0)
+                        {
+                            foreach (var filed in fileds)
+                            {
+                                PropertyField(prop, filed);
+                            }
+                        }
+                        var customs = chart.GetCustomSerieInspectorCustomFileds();
+                        if (customs != null && customs.Length > 0)
+                        {
+                            foreach (var custom in customs)
+                            {
+                                var customProp = prop.FindPropertyRelative(custom[0]);
+                                var anatherName = custom[1] + " (" + customProp.displayName + ")";
+                                EditorGUI.PropertyField(m_DrawRect, customProp, new GUIContent(anatherName));
+                                m_DrawRect.y += EditorGUI.GetPropertyHeight(prop);
+                                m_Heights[m_KeyName] += hig;
+                            }
+                        }
                         break;
                 }
+                PropertyField(prop, "m_ItemStyle");
+                PropertyField(prop, "m_Label");
+                PropertyField(prop, "m_Emphasis");
                 PropertyField(prop, "m_Animation");
                 DrawData(pos, prop, serieType, ref m_DrawRect);
                 --EditorGUI.indentLevel;
             }
+        }
+
+        private string[] GetChartSerieTypeNames(BaseChart chart)
+        {
+            var list = System.Enum.GetNames(typeof(SerieType));
+            for (int i = 0; i < list.Length; i++)
+            {
+                if (list[i].Equals("Custom"))
+                {
+                    var customName = chart.GetCustomSerieTypeName();
+                    if (!string.IsNullOrEmpty(customName))
+                    {
+                        list[i] = customName;
+                    }
+                }
+            }
+            return list;
         }
 
         private void DrawData(Rect pos, SerializedProperty prop, SerieType serieType, ref Rect drawRect)
@@ -327,7 +335,7 @@ namespace XCharts
                 {
                     drawRect.width = drawRect.width - 18;
                     EditorGUI.PropertyField(drawRect, element, new GUIContent("Element " + index));
-                    drawRect.x = currentWidth - 45;
+                    drawRect.x = currentWidth - 40;
                     EditorGUI.PropertyField(drawRect, selected, GUIContent.none);
                     drawRect.x = lastX;
                     drawRect.width = lastWid;
@@ -381,6 +389,7 @@ namespace XCharts
             if (showDetail)
             {
                 EditorGUI.indentLevel += 2;
+                var m_Ignore = serieData.FindPropertyRelative("m_Ignore");
                 var m_Icon = serieData.FindPropertyRelative("m_IconStyle");
                 var m_EnableLabel = serieData.FindPropertyRelative("m_EnableLabel");
                 var m_Label = serieData.FindPropertyRelative("m_Label");
@@ -390,6 +399,8 @@ namespace XCharts
                 var m_Emphasis = serieData.FindPropertyRelative("m_Emphasis");
                 var m_EnableSymbol = serieData.FindPropertyRelative("m_EnableSymbol");
                 var m_Symbol = serieData.FindPropertyRelative("m_Symbol");
+                EditorGUI.PropertyField(drawRect, m_Ignore);
+                AddHeight(EditorGUI.GetPropertyHeight(m_Ignore));
                 EditorGUI.PropertyField(drawRect, m_Icon);
                 AddHeight(EditorGUI.GetPropertyHeight(m_Icon));
                 EditorGUI.PropertyField(drawRect, m_Symbol);

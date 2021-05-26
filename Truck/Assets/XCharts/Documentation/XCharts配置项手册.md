@@ -24,7 +24,6 @@
 * [Serie-Ring 环形图](#Serie-Ring)  
 * [Serie-Liquid 水位图](#Serie-Liquid)  
 * [Serie-Candlestick K线图](#Serie-Candlestick)  
-* [Serie-Gantt 甘特图](#Serie-Gantt)  
 * [Settings 设置](#Settings)
 * [Theme 主题](#Theme)  
 * [Tooltip 提示框](#Tooltip)  
@@ -52,6 +51,7 @@
 * [SerieSymbol 图形标记](#SerieSymbol)  
 * [TextLimit 文本自适应](#TextLimit)  
 * [TextStyle 文本样式](#TextStyle)  
+* [IconStyle 图标样式](#IconStyle)  
 
 ## `Theme`
 
@@ -205,6 +205,9 @@
 * `fontSize`：字体大小。
 * `fontStyle`：字体风格。
 * `lineSpacing`：行间距。
+* `alignment`：对齐方式。
+* `autoWrap`：是否自动换行。
+* `autoAlign`：是否让系统自动设置对齐方式。为true时系统自动选择对齐方式，为false时用alignment。
 
 ## `Tooltip`
 
@@ -260,11 +263,14 @@
 * `shapeWidth`：容器的厚度。
 * `gap`：间隙。容器和液体的间隙。
 * `center`：中心点。数组的第一项是横坐标，第二项是纵坐标。当值为0-1之间时表示百分比，设置成百分比时表示图表宽高最小值的百分比。
-* `radius`：半径。
-* `smoothness`：开启或关闭缩放区域功能。
 * `backgroundColor`：背景色，默认透明。
 * `color`：容器颜色。当`autoColor`为`false`时生效。
 * `autoColor`：是否自动颜色。默认`true`。为`true`时颜色会和`serie`一致。
+* `radius`：半径。
+* `smoothness`：开启或关闭缩放区域功能。
+* `width`：容器的宽。shape为Rect时有效。
+* `height`：容器的高。shape为Rect时有效。
+* `cornerRadius`： 容器的圆角半径。用数组分别指定4个圆角半径（顺时针左上，右上，右下，左下）。shape为Rect时有效。
 
 ## `DataZoom`
 
@@ -395,13 +401,16 @@
 * `boundaryGap`：坐标轴两边是否留白。默认为 `true`。
 * `maxCache`：类目数据中可缓存的最大数据量。默认为`0`没有限制，大于0时超过指定值会移除旧数据再插入新数据。
 * `inverse`：是否反向坐标轴。只在数值轴`Value`中有效。
+* `insertDataToHead`：添加新数据时是在列表的头部还是尾部加入。
 * `data`：类目数据，在类目轴（`type: 'Category'`）中有效。
+* `icons`：刻度的图标，在类目轴（`type: 'Category'`）中有效。
 * `axisLine`：坐标轴轴线相关配置 [AxisLine](#AxisLine)。
 * `axisName`：坐标轴名称相关配置 [AxisName](#AxisName)。
 * `axisTick`：坐标轴刻度相关配置 [AxisTick](#AxisTick)。
 * `axisLabel`：坐标轴刻度标签 [AxisLabel](#AxisLabel)。
 * `splitLine`：坐标轴轴线坐标轴分割线 [AxisSplitLine](#SplitLine)。
 * `splitArea`：坐标轴轴线坐标轴分割区域 [AxisSplitArea](#AxisSplitArea)。
+* `iconStyle`：坐标轴刻度图标的样式 [IconStyle](#IconStyle)。
 
 相关接口：
 
@@ -529,6 +538,7 @@
 * `emphasis`：高亮样式 [Emphasis](#Emphasis)。
 * `animation`：起始动画 [SerieAnimation](#SerieAnimation)。
 * `lineArrow`：折线图的箭头 [LineArrow](#LineArrow)。
+* `insertDataToHead`：添加新数据时是在列表的头部还是尾部加入。
 * `data`：系列中的数据项 [SerieData](#SerieData) 数组，可以设置`1`到`n`维数据。
 
 ## `Serie-Line`
@@ -775,28 +785,15 @@ K线图系列。
 * `animation`：起始动画 [SerieAnimation](#SerieAnimation)。
 * `data`：系列中的数据项 [SerieData](#SerieData) 数组，K线图至少需要4个维度的数组`[open, close, lowest, highest]`。
 
-## `Serie-Gantt`
-
-甘特图系列。支持类目轴和时间轴的甘特图，当 `X` 轴为类目轴时，数据为类目的索引，`X` 轴为时间轴时，数据为时间戳（秒为单位）。`Y` 轴默认为类目轴，显示的数据来源于`Serie`的`Data`的`Name`。
-甘特图默认支持开始和结束时间，也可以额外支持实际开始和结束时间。
-
-* `show`：系列是否显示在图表上。
-* `type`：`Gantt`。
-* `name`：系列名称。用于 `tooltip` 的显示，`legend` 的图例筛选。
-* `xAxisIndex`：使用的坐标轴X轴的 `index`，在单个图表实例中存在多个坐标轴的时候有用。
-* `yAxisIndex`：使用的坐标轴Y轴的 `index`，在单个图表实例中存在多个坐标轴的时候有用。
-* `clip`：是否裁剪超出坐标系部分的图形。
-* `large`：是否开启大数据量优化，在数据图形特别多而出现卡顿时候可以开启。开启后配合 largeThreshold 在数据量大于指定阈值的时候对绘制进行优化。缺点：优化后不能自定义设置单个数据项的样式，不能显示Label，折线图不绘制Symbol。
-* `largeThreshold`：开启大数量优化的阈值。只有当开启了large并且数据量大于该阀值时才进入性能模式。
-* `itemStyle`：甘特图的柱条样式，包括设置背景颜色和边框等 [ItemStyle](#ItemStyle)。
-* `emphasis`：高亮样式 [Emphasis](#Emphasis)。
-* `animation`：起始动画 [SerieAnimation](#SerieAnimation)。
-* `data`：系列中的数据项 [SerieData](#SerieData) 数组，甘特图至少需要2个维度的数组`[start, end]`，也支持4个维度的数组`[start, end, actualStart, actualEnd]`。当 X 轴为类目轴时，数据为类目的索引，X 轴为时间轴时，数据为时间戳（秒为单位）。
-
 ## `Settings`
 
 全局参数设置组件。一般情况下可使用默认值，当有需要时可进行调整。
 
+* `reversePainter`：Painter是否逆序。逆序时index大的serie最先绘制。
+* `maxPainter`：默认最大Painter数据，当Serie数量大于maxPainter时会平均分配Painter。
+* `basePainterMaterial`：Base Pointer 材质球，设置后会影响Axis等。
+* `seriePainterMaterial`：Serie Pointer 材质球，设置后会影响所有Serie。
+* `topPainterMaterial`：Top Pointer 材质球，设置后会影响Tooltip等。
 * `lineSmoothStyle`：曲线平滑系数。通过调整平滑系数可以改变曲线的曲率，得到外观稍微有变化的不同曲线。
 * `lineSmoothness`：曲线平滑度。值越小曲线越平滑，但顶点数也会随之增加。当开启有渐变的区域填充时，数值越大渐变过渡效果越差。
 * `lineSegmentDistance`： 线段的分割距离。普通折线图的线是由很多线段组成，段数由该数值决定。值越小段数越多，但顶点数也会随之增加。当开启有渐变的区域填充时，数值越大渐变过渡效果越差。
@@ -837,6 +834,8 @@ K线图系列。
 * `numericFormatter`：标准数字格式字符串。用于将数值格式化显示为字符串。使用`Axx`的形式：`A`是格式说明符的单字符，支持`C`货币、`D`十进制、`E`指数、`F`顶点数、`G`常规、`N`数字、`P`百分比、`R`往返过程、`X`十六进制等九种。`xx`是精度说明，从`0`-`99`。
 * `showAsPositiveNumber`：将负数数值显示为正数。一般和`Serie`的`showAsPositiveNumber`配合使用。
 * `onZero`：刻度标签显示在`0`刻度上。
+* `width`：刻度标签的宽。当为0时系统自动设置。
+* `height`：刻度标签的高。当为0时系统自动设置。
 * `textLimit`：文本自适应 [TextLimit](#TextLimit)。只在类目轴中有效。
 * `textStyle`：文本样式 [TextStyle](#TextStyle)。
 
@@ -879,6 +878,8 @@ K线图系列。
 * `inside`：坐标轴刻度是否朝内，默认朝外。
 * `length`：坐标轴刻度的长度。
 * `width`：坐标轴刻度的宽度。默认为0时宽度和坐标轴一致。
+* `showStartTick`：是否显示第一个刻度。
+* `showEndTick`：是否显示最后一个刻度。
 
 ## `Emphasis`
 
@@ -1024,6 +1025,16 @@ K线图系列。
 * `startIndex`：开始显示图形标记的索引。
 * `interval`：显示图形标记的间隔。`0`表示显示所有标签，`1`表示隔一个隔显示一个标签，以此类推。
 * `forceShowLast`：是否强制显示最后一个图形标记。默认为 `false`。
+
+## `IconStyle`
+
+* `show`：是否显示图标。
+* `layer`：显示在上层还是在下层。
+* `sprite`：图标。
+* `color`：颜色。
+* `width`：图标的宽。
+* `height`：图标的高。
+* `offset`：位置偏移。
 
 [返回首页](https://github.com/monitor1394/unity-ugui-XCharts)  
 [XChartsAPI接口](XChartsAPI.md)  

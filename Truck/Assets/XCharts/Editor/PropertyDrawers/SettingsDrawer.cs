@@ -27,7 +27,11 @@ namespace XCharts
                     chart.settings.Reset();
                 }
                 ++EditorGUI.indentLevel;
+                PropertyField(prop, "m_ReversePainter");
                 PropertyField(prop, "m_MaxPainter");
+                PropertyField(prop, "m_BasePainterMaterial");
+                PropertyField(prop, "m_SeriePainterMaterial");
+                PropertyField(prop, "m_TopPainterMaterial");
                 PropertyField(prop, "m_LineSmoothStyle");
                 PropertyField(prop, "m_LineSmoothness");
                 PropertyField(prop, "m_LineSegmentDistance");

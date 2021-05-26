@@ -247,13 +247,13 @@ namespace XCharts
             chartText.tmpText.alignment = textStyle.tmpAlignment;
             chartText.tmpText.richText = true;
             chartText.tmpText.raycastTarget = false;
-            chartText.tmpText.enableWordWrapping = false;
+            chartText.tmpText.enableWordWrapping = textStyle.autoWrap;
 #else
             chartText.text = GetOrAddComponent<Text>(txtObj);
             chartText.text.font = textStyle.font == null ? theme.font : textStyle.font;
             chartText.text.fontStyle = textStyle.fontStyle;
             chartText.text.alignment = textStyle.alignment;
-            chartText.text.horizontalOverflow = HorizontalWrapMode.Overflow;
+            chartText.text.horizontalOverflow = textStyle.autoWrap ? HorizontalWrapMode.Wrap : HorizontalWrapMode.Overflow;
             chartText.text.verticalOverflow = VerticalWrapMode.Overflow;
             chartText.text.supportRichText = true;
             chartText.text.raycastTarget = false;
@@ -371,7 +371,7 @@ namespace XCharts
             img.color = Color.black;
             var txt = AddTextObject("Text", tooltipObj.transform, anchorMin, anchorMax, pivot, sizeDelta,
                 textStyle, theme.tooltip);
-            txt.SetAlignment(TextAnchor.UpperLeft);
+            txt.SetAlignment(textStyle.GetAlignment(TextAnchor.UpperLeft));
             txt.SetText("Text");
             txt.SetLocalPosition(new Vector2(3, -3));
             tooltipObj.transform.localPosition = Vector3.zero;
@@ -387,7 +387,7 @@ namespace XCharts
             return ChartHelper.GetOrAddComponent<Painter>(painterObj);
         }
 
-        public static GameObject AddIcon(string name, Transform parent, float width, float height)
+        public static Image AddIcon(string name, Transform parent, float width, float height)
         {
             var anchorMax = new Vector2(0.5f, 0.5f);
             var anchorMin = new Vector2(0.5f, 0.5f);
@@ -396,7 +396,29 @@ namespace XCharts
             GameObject iconObj = AddObject(name, parent, anchorMin, anchorMax, pivot, sizeDelta);
             var img = GetOrAddComponent<Image>(iconObj);
             img.raycastTarget = false;
-            return iconObj;
+            return img;
+        }
+
+        public static ChartLabel AddAxisLabelObject(int index, string name, Transform parent, Vector2 anchorMin, Vector2 anchorMax,
+            Vector2 pivot, Vector2 sizeDelta, Axis axis, ComponentTheme theme)
+        {
+            var textStyle = axis.axisLabel.textStyle;
+            var iconStyle = axis.iconStyle;
+            var label = new ChartLabel();
+            label.gameObject = AddObject(name, parent, anchorMin, anchorMax, pivot, sizeDelta);
+
+            // TODO: 为了兼容旧版本，这里后面版本可以去掉
+            var oldText = label.gameObject.GetComponent<Text>();
+            if (oldText != null)
+            {
+                GameObject.DestroyImmediate(oldText);
+            }
+            label.label = AddTextObject("Text", label.gameObject.transform, anchorMin, anchorMax, pivot, sizeDelta, textStyle, theme);
+            label.icon = ChartHelper.AddIcon("Icon", label.gameObject.transform, iconStyle.width, iconStyle.height);
+            label.SetAutoSize(false);
+            label.UpdateIcon(iconStyle, axis.GetIcon(index));
+            label.label.SetActive(axis.axisLabel.show && (axis.axisLabel.interval == 0 || index % (axis.axisLabel.interval + 1) == 0));
+            return label;
         }
 
         internal static GameObject AddSerieLabel(string name, Transform parent, float width, float height,
@@ -412,7 +434,7 @@ namespace XCharts
             var txt = AddTextObject("Text", labelObj.transform, anchorMin, anchorMax, pivot, sizeDelta, textStyle,
                 theme.common);
             txt.SetColor(color);
-            txt.SetAlignment(TextAnchor.MiddleCenter);
+            txt.SetAlignment(textStyle.alignment);
             txt.SetText("Text");
             txt.SetLocalPosition(new Vector2(0, 0));
             txt.SetLocalEulerAngles(Vector3.zero);
@@ -712,20 +734,20 @@ namespace XCharts
             }
             if (ceilRate == 0)
             {
-                int bigger = Mathf.CeilToInt(Mathf.Abs(max));
+                var bigger = Mathf.Ceil(Mathf.Abs(max));
                 int n = 1;
                 while (bigger / (Mathf.Pow(10, n)) > 10)
                 {
                     n++;
                 }
                 float mm = bigger;
-                if (mm > 10)
+                if (mm > 10 && n < 38)
                 {
                     mm = bigger - bigger % (Mathf.Pow(10, n));
                     mm += max > 0 ? Mathf.Pow(10, n) : -Mathf.Pow(10, n);
                 }
-                if (max < 0) return -Mathf.CeilToInt(mm);
-                else return Mathf.CeilToInt(mm);
+                if (max < 0) return -Mathf.Ceil(mm);
+                else return Mathf.Ceil(mm);
             }
             else
             {
@@ -752,20 +774,20 @@ namespace XCharts
             }
             if (ceilRate == 0)
             {
-                int bigger = Mathf.FloorToInt(Mathf.Abs(min));
+                var bigger = Mathf.Floor(Mathf.Abs(min));
                 int n = 1;
                 while (bigger / (Mathf.Pow(10, n)) > 10)
                 {
                     n++;
                 }
                 float mm = bigger;
-                if (mm > 10)
+                if (mm > 10 && n < 38)
                 {
                     mm = bigger - bigger % (Mathf.Pow(10, n));
                     mm += min < 0 ? Mathf.Pow(10, n) : -Mathf.Pow(10, n);
                 }
-                if (min < 0) return -Mathf.FloorToInt(mm);
-                else return Mathf.FloorToInt(mm);
+                if (min < 0) return -Mathf.Floor(mm);
+                else return Mathf.Floor(mm);
             }
             else
             {
@@ -780,7 +802,7 @@ namespace XCharts
             splitNumber = 0;
             if (value <= 0) return 0;
             float max = 0;
-            while (splitNumber < 12 && max < value)
+            while (max < value)
             {
                 if (isLogBaseE)
                 {
@@ -800,7 +822,7 @@ namespace XCharts
             splitNumber = 0;
             if (value > 1) return 1;
             float min = 1;
-            while (splitNumber < 12 && min > value)
+            while (min > value)
             {
                 if (isLogBaseE)
                 {
@@ -820,12 +842,12 @@ namespace XCharts
             if (value > 1 || value < -1) return 0;
             int count = 1;
             int intvalue = (int)(value * Mathf.Pow(10, count));
-            while (intvalue == 0 && count < 12)
+            while (intvalue == 0 && count < 38)
             {
                 count++;
                 intvalue = (int)(value * Mathf.Pow(10, count));
             }
-            if (count == 12 && (value == 0 || value == 1)) return 1;
+            if (count == 38 && (value == 0 || value == 1)) return 1;
             else return count;
         }
 
@@ -1005,10 +1027,9 @@ namespace XCharts
             }
         }
 
-        public static Color32 GetHighlightColor(Color32 color)
+        public static Color32 GetHighlightColor(Color32 color, float rate = 0.8f)
         {
             var newColor = color;
-            var rate = 0.8f;
             newColor.r = (byte)(color.r * rate);
             newColor.g = (byte)(color.g * rate);
             newColor.b = (byte)(color.b * rate);

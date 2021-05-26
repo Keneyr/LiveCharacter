@@ -1,7 +1,7 @@
 
 # 更新日志
 
-[Latest](#Latest)  
+[master](#master)  
 [v2.1.1](#v2.1.1)  
 [v2.1.0](#v2.1.0)  
 [v2.0.1](#v2.0.1)  
@@ -32,7 +32,33 @@
 [v0.5.0](#v0.5.0)  
 [v0.1.0](#v0.1.0)  
 
-## Latest
+## master
+
+* (2021.05.25) Improved `TextStyle` support for `alignment`
+* (2021.05.24) Fixed the problem that `Label` could not display properly when `PieChart` data were all `0`
+* (2021.05.24) Fixed an issue where `Serie Name` was not working on the `Add Serie` panel (#149)
+* (2021.05.23) Added `TextStyle` `autoWrap` to set whether to wrap lines
+* (2021.05.23) Added `TextStyle` `autoAlign` whether to set alignment automatically
+* (2021.05.23) Added `width` and `height` of `axisLabel` to support custom text length and width
+* (2021.05.23) Added `Axis` `iconStyle` and `icons` to support setting coordinate Axis labels to display icons
+* (2021.05.20) Added the `insertDataHead` parameter to `Serie` and `Axis` to control whether data is inserted into the head or tail
+* (2021.05.18) Optimize chart creation under `Editor` #147
+* (2021.05.16) Pull out the `Ganttchart` chart and provide it as an extension module
+* (2021.05.11) Added support for `VisualMap` to set color by `Piecewise`
+* (2021.05.09) Fixed an issue where `RingChart` could not set the background color of the ring  #141
+* (2021.05.08) Added `Liquidchart` support for `Rect` shape
+* (2021.05.07) Improved the `Axis` scale performance #135
+* (2021.05.01) Added `Settings` parameters for painter's material #140
+* (2021.05.01) Fixed an issue where some super large or super small values could not be properly represented
+* (2021.04.29) Fixed an issue with `Radar` switching to `Circle` anomaly #139
+* (2021.04.29) Added `Settings`'s `reversePainter` to set whether or not `Serie` is drawn in reverse order
+* (2021.04.28) Fixed bug where `AxisLabel` displayed incorrectly with `DataRoom` (#138)
+* (2021.04.26) Fixed dynamically creating chart at runtime would be abnormal #137
+* (2021.04.26) Added support for `Barchart` to draw gradient borders
+* (2021.04.23) Added support for custom charts
+* (2021.04.22) Fixed bug where `Gauge` `axisLabel`'s text color could not be adjusted
+* (2021.04.13) Add the `ShowStarttick` and '`ShowEndTick` parameters of 'AxisTick' to control whether the first and last ticks are displayed
+* (2021.04.13) Improved multi-axis support #132
 
 ## v2.1.1
 

@@ -9,7 +9,7 @@ using UnityEngine.UI;
 
 namespace XCharts
 {
-    internal static class LegendHelper
+    public static class LegendHelper
     {
         public static Color GetContentColor(Legend legend, ChartTheme theme, bool active)
         {
@@ -57,7 +57,7 @@ namespace XCharts
             ChartHelper.GetOrAddComponent<Image>(contentObj);
             var txt = ChartHelper.AddTextObject("Text", contentObj.transform, anchorMin, anchorMax, pivot, sizeDelta,
                 textStyle, theme.legend);
-            txt.SetAlignment(TextAnchor.MiddleLeft);
+            txt.SetAlignment(textStyle.GetAlignment(TextAnchor.MiddleLeft));
             txt.SetColor(contentColor);
             var item = new LegendItem();
             item.index = i;

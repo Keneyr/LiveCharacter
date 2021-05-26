@@ -102,7 +102,8 @@ namespace XCharts
                         SerieLabelHelper.ResetLabel(serieData.labelObject.label, serieLabel, chart.theme, i);
                         serieData.SetLabelActive(serieData.labelPosition != Vector3.zero);
                         serieData.labelObject.SetLabelPosition(serieLabel.offset);
-                        var content = SerieLabelHelper.GetFormatterContent(serie, serieData, value, max, serieLabel);
+                        var content = SerieLabelHelper.GetFormatterContent(serie, serieData, value, max,
+                            serieLabel, Color.clear);
                         if (serieData.labelObject.SetText(content))
                         {
                             chart.RefreshPainter(serie);
@@ -118,6 +119,7 @@ namespace XCharts
 
         public bool CheckTootipArea(Vector2 local)
         {
+            if (!chart.series.Contains(SerieType.Radar)) return false;
             if (m_IsEnterLegendButtom) return false;
             if (!IsInRadar(local)) return false;
             bool highlight = false;
@@ -257,7 +259,7 @@ namespace XCharts
                         new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(txtWid, txtHig),
                         textStyle, chart.theme.radar);
                     txt.gameObject.hideFlags = chart.chartHideFlags;
-                    txt.SetAlignment(TextAnchor.MiddleCenter);
+                    txt.SetAlignment(textStyle.GetAlignment(TextAnchor.MiddleCenter));
                     txt.SetText(radar.indicatorList[i].name);
                     txt.SetActive(radar.indicator);
                     var offset = new Vector3(textStyle.offset.x, textStyle.offset.y);
@@ -685,7 +687,7 @@ namespace XCharts
             var lineWidth = radar.splitLine.GetWidth(chart.theme.radar.splitLineWidth);
             for (int i = 0; i < radar.splitNumber; i++)
             {
-                Color color = radar.splitArea.color[i % radar.splitArea.color.Count];
+                var color = radar.splitArea.GetColor(i, chart.theme.radiusAxis);
                 outsideRadius = insideRadius + block;
                 if (radar.splitArea.show)
                 {

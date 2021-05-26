@@ -30,17 +30,21 @@ public class CharacterPreprocessing : MonoBehaviour
     
     //SpriteMeshInstance
     public static SpriteMeshGameObject spriteMeshGO = null;
-    static Material m_DefaultMaterial = null;
-    public static Material defaultMaterial
+    static Material m_SpritesMaterial = null;
+    public static Material spritesDefaultMaterial
     {
         get
         {
-            if (!m_DefaultMaterial)
+            if (!m_SpritesMaterial)
             {
-                m_DefaultMaterial = new Material(Shader.Find("Sprites/Default"));
+                m_SpritesMaterial = new Material(Shader.Find("Sprites/Default"));
+                //GameObject go = new GameObject();
+                //SpriteRenderer sr = go.AddComponent<SpriteRenderer>();
+                //m_SpritesMaterial = sr.sharedMaterial;
+                //GameObject.DestroyImmediate(go);
             }
 
-            return m_DefaultMaterial;
+            return m_SpritesMaterial;
         }
     }
     /// <summary>
@@ -57,6 +61,7 @@ public class CharacterPreprocessing : MonoBehaviour
         if (sprite)
         {
             spriteMeshData = ScriptableObject.CreateInstance<SpriteMeshData>();
+            spriteMeshData.sprite = sprite;
             float detail = 0.25f;
             float alphaTolerance = 0.05f;
             float tesselation = 0f;
@@ -80,12 +85,11 @@ public class CharacterPreprocessing : MonoBehaviour
         List<Vector2> l_texcoords;
         List<IndexedEdge> l_indexedEdges;
         List<int> l_indices;
-        Texture2D texture = sprite.texture;
+        Texture2D texture = _spriteMeshData.sprite.texture;
         List<Hole> holes = new List<Hole>();
         InitFromOutline(texture,detail,alphaTolerance,holeDetection,
             out l_texcoords,out l_indexedEdges,out l_indices);
 
-        
         spriteMeshData.vertices = l_texcoords.ToArray();
         spriteMeshData.edges = l_indexedEdges.ToArray();
         spriteMeshData.indices = l_indices.ToArray();
@@ -280,7 +284,7 @@ public class CharacterPreprocessing : MonoBehaviour
     {
         Texture2D tx = CharacterManager.instance.tx;
         //sprite = tx as Object as Sprite;
-        sprite = Sprite.Create(tx, new Rect(0, 0, tx.width, tx.height), Vector2.zero);
+        sprite = Sprite.Create(tx, new Rect(0, 0, tx.width, tx.height), /*Top Left*/Vector2.zero, /*pixelsPerUnit*/100); 
     }
     static void SaveAssetsFile(SpriteMeshData _spriteMeshData)
     {
@@ -455,7 +459,9 @@ public class CharacterPreprocessing : MonoBehaviour
             gameObject.transform.position = new Vector3(0,0,0);
             spriteMeshGO = gameObject.AddComponent<SpriteMeshGameObject>();
             spriteMeshGO.spriteMeshData = spriteMeshData;
-            spriteMeshGO.sharedMaterial = defaultMaterial;
+
+            spriteMeshGO.sharedMaterial = spritesDefaultMaterial;
+            spriteMeshGO.sharedMaterial.mainTexture = spriteMeshData.sprite.texture;
             //material
         }
     }
@@ -518,8 +524,6 @@ public class CharacterPreprocessing : MonoBehaviour
                     skinnedMeshRenderer.rootBone = null;
                 }
                 skinnedMeshRenderer.materials[0] = spriteMeshGO.sharedMaterial;
-                
-                
             }
             
         }
@@ -546,25 +550,72 @@ public class CharacterPreprocessing : MonoBehaviour
         if(!spriteMeshData.sharedMesh)
         {
             UnityEngine.Mesh mesh = new UnityEngine.Mesh();
-            //UnityEditor.SerializedObject spriteMeshSO = new UnityEditor.SerializedObject(spriteMeshData);
-            //UnityEditor.SerializedProperty sharedMeshProp = spriteMeshData.FindProperty("m_SharedMesh");
-            //spriteMeshSO.Update();
             spriteMeshData.sharedMesh = mesh;
-            //spriteMeshSO.ApplyModifiedProperties();
+            
         }
 
-        List<Matrix4x4> bindposes = (new List<BindingInfo>(spriteMeshData.bindPoses)).ConvertAll(p => p.bindPose);
-        List<UnityEngine.BoneWeight> boneWeights = new List<UnityEngine.BoneWeight>(spriteMeshData.boneWeights.Length);
-        //Vector2[] normals = (new List<Vector2>(spriteMeshData.vertices)).ConvertAll(v => Vector2.back).ToArray();
-        Vector2 textureWidthHeightInv = new Vector2(1f / sprite.texture.width, 1f / sprite.texture.height);
-        Vector2[] uvs = (new List<Vector2>(spriteMeshData.vertices)).ConvertAll(v => Vector2.Scale(v, textureWidthHeightInv)).ToArray(); //?
+        List<Matrix4x4> bindposes = 
+            (new List<BindingInfo>(spriteMeshData.bindPoses)).ConvertAll(p => p.bindPose);
 
-        Vector3[] tmp = new List<Vector2>((spriteMeshData.vertices)).ConvertAll(v => new Vector3(v.x,v.y,0)).ToArray() ;
-        Vector3[] normals = (new List<Vector3>(tmp)).ConvertAll(v => Vector3.back).ToArray();
+        BoneWeight[] boneWeightsData = spriteMeshData.boneWeights;
+
+        List<UnityEngine.BoneWeight> boneWeights = new List<UnityEngine.BoneWeight>(boneWeightsData.Length);
+
+        Vector2 textureWidthHeightInv = 
+            new Vector2(1f / sprite.texture.width, 1f / sprite.texture.height);
+
+        Vector2[] uvs = 
+            (new List<Vector2>(spriteMeshData.vertices)).ConvertAll(v => Vector2.Scale(v, textureWidthHeightInv)).ToArray(); //?
+    
+        Vector3[] tmp = 
+            new List<Vector2>((spriteMeshData.vertices)).ConvertAll(v => new Vector3(v.x,v.y,0)).ToArray() ;
+
+        Vector3[] normals = 
+            (new List<Vector3>(tmp)).ConvertAll(v => Vector3.back).ToArray();
+
+        List<float> verticesOrder = new List<float>(spriteMeshData.vertices.Length);
+        for (int i = 0; i < boneWeightsData.Length; i++)
+        {
+            BoneWeight boneWeight = boneWeightsData[i];
+
+            List<KeyValuePair<int, float>> pairs = new List<KeyValuePair<int, float>>();
+            pairs.Add(new KeyValuePair<int, float>(boneWeight.boneIndex0, boneWeight.weight0));
+            pairs.Add(new KeyValuePair<int, float>(boneWeight.boneIndex1, boneWeight.weight1));
+            pairs.Add(new KeyValuePair<int, float>(boneWeight.boneIndex2, boneWeight.weight2));
+            pairs.Add(new KeyValuePair<int, float>(boneWeight.boneIndex3, boneWeight.weight3));
+
+            pairs = pairs.OrderByDescending(s => s.Value).ToList();
+
+            UnityEngine.BoneWeight boneWeight2 = new UnityEngine.BoneWeight();
+            boneWeight2.boneIndex0 = Mathf.Max(0, pairs[0].Key);
+            boneWeight2.boneIndex1 = Mathf.Max(0, pairs[1].Key);
+            boneWeight2.boneIndex2 = Mathf.Max(0, pairs[2].Key);
+            boneWeight2.boneIndex3 = Mathf.Max(0, pairs[3].Key);
+            boneWeight2.weight0 = pairs[0].Value;
+            boneWeight2.weight1 = pairs[1].Value;
+            boneWeight2.weight2 = pairs[2].Value;
+            boneWeight2.weight3 = pairs[3].Value;
+
+            boneWeights.Add(boneWeight2);
+
+            float vertexOrder = i;
+
+            if (spriteMeshData.bindPoses.Length > 0)
+            {
+                vertexOrder = spriteMeshData.bindPoses[boneWeight2.boneIndex0].zOrder * boneWeight2.weight0 +
+                    spriteMeshData.bindPoses[boneWeight2.boneIndex1].zOrder * boneWeight2.weight1 +
+                        spriteMeshData.bindPoses[boneWeight2.boneIndex2].zOrder * boneWeight2.weight2 +
+                        spriteMeshData.bindPoses[boneWeight2.boneIndex3].zOrder * boneWeight2.weight3;
+            }
+
+            verticesOrder.Add(vertexOrder);
+        }
+
+
 
         spriteMeshData.sharedMesh.Clear();
         spriteMeshData.sharedMesh.vertices = tmp;
-        spriteMeshData.sharedMesh.uv = uvs;
+        spriteMeshData.sharedMesh.uv = uvs; //?感觉这样不对呢..
         spriteMeshData.sharedMesh.triangles = spriteMeshData.indices.ToArray();
         spriteMeshData.sharedMesh.normals = normals;
         spriteMeshData.sharedMesh.boneWeights = boneWeights.ToArray();

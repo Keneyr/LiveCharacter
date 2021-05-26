@@ -19,6 +19,7 @@ namespace XCharts
     {
         [SerializeField] private string m_Name;
         [SerializeField] private bool m_Selected;
+        [SerializeField] private bool m_Ignore = false;
         [SerializeField] private float m_Radius;
         [SerializeField] private IconStyle m_IconStyle = new IconStyle();
         [SerializeField] private bool m_EnableLabel = false;
@@ -93,6 +94,14 @@ namespace XCharts
         /// 单个数据项的标记设置。
         /// </summary>
         public SerieSymbol symbol { get { return m_Symbol; } set { m_Symbol = value; } }
+        /// <summary>
+        /// 是否忽略数据。当为 true 时，数据不进行绘制。
+        /// </summary>
+        public bool ignore
+        {
+            get { return m_Ignore; }
+            set { if (PropertyUtil.SetStruct(ref m_Ignore, value)) SetVerticesDirty(); }
+        }
         /// <summary>
         /// An arbitrary dimension data list of data item.
         /// 可指定任意维数的数值列表。
@@ -187,14 +196,14 @@ namespace XCharts
         /// 饼图数据项的偏移半径
         /// </summary>
         public float runtimePieOffsetRadius { get; internal set; }
-        public Vector3 runtimePosition { get; internal set; }
+        public Vector3 runtimePosition { get; set; }
         /// <summary>
         /// 绘制区域。
         /// </summary>
-        public Rect runtimeRect { get; internal set; }
-        public float runtimeAngle { get; internal set; }
-        public Vector3 runtiemPieOffsetCenter { get; internal set; }
-        public float runtimeStackHig { get; internal set; }
+        public Rect runtimeRect { get; set; }
+        public float runtimeAngle { get; set; }
+        public Vector3 runtiemPieOffsetCenter { get; set; }
+        public float runtimeStackHig { get; set; }
         private List<float> m_PreviousData = new List<float>();
         private List<float> m_DataUpdateTime = new List<float>();
         private List<bool> m_DataUpdateFlag = new List<bool>();
@@ -228,6 +237,18 @@ namespace XCharts
             if (index >= 0 && index < m_Data.Count)
             {
                 return inverse ? -m_Data[index] : m_Data[index];
+            }
+            else return 0;
+        }
+
+        public float GetData(int index, float min, float max)
+        {
+            if (index >= 0 && index < m_Data.Count)
+            {
+                var value = m_Data[index];
+                if (value < min) return min;
+                else if (value > max) return max;
+                else return value;
             }
             else return 0;
         }

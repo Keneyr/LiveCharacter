@@ -123,6 +123,14 @@ namespace XCharts
         }
 
         /// <summary>
+        /// 重新初始化Painter
+        /// </summary>
+        public void SetPainterDirty()
+        {
+            m_PainerDirty = true;
+        }
+
+        /// <summary>
         /// Redraw graph in next frame.
         /// 在下一帧刷新图形。
         /// </summary>
@@ -154,6 +162,17 @@ namespace XCharts
         {
             ChartHelper.DestroyAllChildren(transform);
             //SetAllComponentDirty();
+        }
+
+        public bool ScreenPointToChartPoint(Vector2 screenPoint, out Vector2 chartPoint)
+        {
+            var cam = canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : canvas.worldCamera;
+            if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(rectTransform,
+                screenPoint, cam, out chartPoint))
+            {
+                return false;
+            }
+            return true;
         }
     }
 }

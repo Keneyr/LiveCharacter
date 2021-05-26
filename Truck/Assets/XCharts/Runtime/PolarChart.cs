@@ -27,6 +27,9 @@ namespace XCharts
         protected override void InitComponent()
         {
             base.InitComponent();
+            if (m_Polars.Count == 0) m_Polars = new List<Polar>() { Polar.defaultPolar };
+            if (m_RadiusAxes.Count == 0) m_RadiusAxes = new List<RadiusAxis>() { RadiusAxis.defaultRadiusAxis };
+            if (m_AngleAxes.Count == 0) m_AngleAxes = new List<AngleAxis>() { AngleAxis.defaultAngleAxis };
             CheckMinMaxValue();
             UpdateRuntimeValue();
             InitPolars();
@@ -40,9 +43,10 @@ namespace XCharts
         protected override void Reset()
         {
             base.Reset();
-            m_Polars = new List<Polar>() { Polar.defaultPolar };
-            m_RadiusAxes = new List<RadiusAxis>() { RadiusAxis.defaultRadiusAxis };
-            m_AngleAxes = new List<AngleAxis>() { AngleAxis.defaultAngleAxis };
+            m_Polars.Clear();
+            m_RadiusAxes.Clear();
+            m_AngleAxes.Clear();
+            InitComponent();
             title.text = "PolarChart";
             tooltip.type = Tooltip.Type.Corss;
             RemoveData();
@@ -118,7 +122,7 @@ namespace XCharts
             var m_AngleAxis = GetAngleAxis(m_Polar.index);
             if (m_AngleAxis == null) return;
             PolarHelper.UpdatePolarCenter(m_Polar, m_ChartPosition, m_ChartWidth, m_ChartHeight);
-            axis.axisLabelTextList.Clear();
+            axis.runtimeAxisLabelList.Clear();
             var radius = m_Polar.runtimeRadius;
             var objName = "axis_radius" + axis.index;
             var axisObj = ChartHelper.AddObject(objName, transform, graphAnchorMin,
@@ -141,21 +145,18 @@ namespace XCharts
             {
                 float labelWidth = AxisHelper.GetScaleWidth(axis, radius, i, null);
                 bool inside = axis.axisLabel.inside;
-                var txt = ChartHelper.AddTextObject(objName + i, axisObj.transform, new Vector2(0.5f, 0.5f),
-                    new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(labelWidth, txtHig), textStyle,
-                    m_Theme.axis);
-                if (i == 0) axis.axisLabel.SetRelatedText(txt, labelWidth);
+                var label = ChartHelper.AddAxisLabelObject(i, objName + i, axisObj.transform, new Vector2(0.5f, 0.5f),
+                    new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(labelWidth, txtHig), axis, theme.axis);
+                if (i == 0) axis.axisLabel.SetRelatedText(label.label, labelWidth);
                 var isPercentStack = SeriesHelper.IsPercentStack(m_Series, SerieType.Bar);
                 var labelName = AxisHelper.GetLabelName(axis, radius, i, axis.runtimeMinValue, axis.runtimeMaxValue,
                     null, isPercentStack);
-                txt.SetAlignment(TextAnchor.MiddleCenter);
-                txt.SetText(labelName);
-                txt.SetActive(axis.show &&
-                    (axis.axisLabel.interval == 0 || i % (axis.axisLabel.interval + 1) == 0));
+                label.label.SetAlignment(textStyle.GetAlignment(TextAnchor.MiddleCenter));
+                label.SetText(labelName);
                 var pos = ChartHelper.GetPos(cenPos, totalWidth, startAngle, true) + tickVetor;
-                txt.SetLocalPosition(pos);
-                AxisHelper.AdjustRadiusAxisLabelPos(txt, pos, cenPos, txtHig, Vector3.zero);
-                axis.axisLabelTextList.Add(txt);
+                label.SetPosition(pos);
+                AxisHelper.AdjustRadiusAxisLabelPos(label.label, pos, cenPos, txtHig, Vector3.zero);
+                axis.runtimeAxisLabelList.Add(label);
 
                 totalWidth += labelWidth;
             }
@@ -204,13 +205,13 @@ namespace XCharts
             if (m_Polars == null) return;
             PolarHelper.UpdatePolarCenter(m_Polar, m_ChartPosition, m_ChartWidth, m_ChartHeight);
             var radius = m_Polar.runtimeRadius;
-            axis.axisLabelTextList.Clear();
+            axis.runtimeAxisLabelList.Clear();
 
             string objName = "axis_angle" + axis.index;
             var axisObj = ChartHelper.AddObject(objName, transform, graphAnchorMin,
                 graphAnchorMax, chartPivot, new Vector2(chartWidth, chartHeight));
             axisObj.transform.localPosition = Vector3.zero;
-            axisObj.SetActive(axis.show && axis.axisLabel.show);
+            axisObj.SetActive(axis.show);
             axisObj.hideFlags = chartHideFlags;
             ChartHelper.HideAllObject(axisObj);
             var splitNumber = AxisHelper.GetSplitNumber(axis, radius, null);
@@ -225,18 +226,18 @@ namespace XCharts
             {
                 float scaleAngle = AxisHelper.GetScaleWidth(axis, total, i, null);
                 bool inside = axis.axisLabel.inside;
-                var txt = ChartHelper.AddTextObject(objName + i, axisObj.transform, new Vector2(0.5f, 0.5f),
-                    new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(scaleAngle, txtHig),
-                    axis.axisLabel.textStyle, m_Theme.axis);
-                txt.SetAlignment(TextAnchor.MiddleCenter);
-                txt.SetText(AxisHelper.GetLabelName(axis, total, i, axis.runtimeMinValue, axis.runtimeMaxValue,
+
+                var label = ChartHelper.AddAxisLabelObject(i, objName + i, axisObj.transform, new Vector2(0.5f, 0.5f),
+                    new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(scaleAngle, txtHig), axis, theme.axis);
+
+                label.label.SetAlignment(axis.axisLabel.textStyle.GetAlignment(TextAnchor.MiddleCenter));
+                label.SetText(AxisHelper.GetLabelName(axis, total, i, axis.runtimeMinValue, axis.runtimeMaxValue,
                     null, isPercentStack));
-                txt.SetActive(axis.show && (axis.axisLabel.interval == 0 || i % (axis.axisLabel.interval + 1) == 0));
                 var pos = ChartHelper.GetPos(cenPos, radius + margin,
                     isCategory ? (totalAngle + scaleAngle / 2) : totalAngle, true);
-                AxisHelper.AdjustCircleLabelPos(txt, pos, cenPos, txtHig, Vector3.zero);
-                if (i == 0) axis.axisLabel.SetRelatedText(txt, scaleAngle);
-                axis.axisLabelTextList.Add(txt);
+                AxisHelper.AdjustCircleLabelPos(label, pos, cenPos, txtHig, Vector3.zero);
+                if (i == 0) axis.axisLabel.SetRelatedText(label.label, scaleAngle);
+                axis.runtimeAxisLabelList.Add(label);
 
                 totalAngle += scaleAngle;
             }
@@ -703,7 +704,7 @@ namespace XCharts
             if (dist > radius) dist = radius;
             float min = m_RadiusAxis.runtimeMinValue;
             float max = m_RadiusAxis.runtimeMaxValue;
-            var value = min + dist / radius * m_RadiusAxis.runtimeMinMaxRange;
+            var value = (float)(min + dist / radius * m_RadiusAxis.runtimeMinMaxRange);
             m_RadiusAxis.UpdateTooptipLabelText(ChartCached.FloatToStr(value));
             m_RadiusAxis.UpdateTooltipLabelPos(ChartHelper.GetPos(cenPos, dist, m_AngleAxis.runtimeStartAngle, true));
         }

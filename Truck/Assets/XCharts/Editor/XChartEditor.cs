@@ -56,7 +56,7 @@ namespace XCharts
             return name;
         }
 
-        private static void AddChart<T>(string chartName) where T : BaseChart
+        public static void AddChart<T>(string chartName) where T : BaseChart
         {
             var parent = GetParent();
             if (parent == null) return;
@@ -70,6 +70,9 @@ namespace XCharts
             rect.anchorMin = new Vector2(0.5f, 0.5f);
             rect.anchorMax = new Vector2(0.5f, 0.5f);
             rect.pivot = new Vector2(0.5f, 0.5f);
+            GameObjectUtility.EnsureUniqueNameForSibling(chart);
+            Selection.activeGameObject = chart;
+            EditorUtility.SetDirty(chart);
         }
 
         [MenuItem("XCharts/LineChart", priority = 44)]
@@ -142,11 +145,11 @@ namespace XCharts
             AddChart<LiquidChart>("LiquidChart");
         }
 
-        [MenuItem("XCharts/GanttChart", priority = 54)]
-        [MenuItem("GameObject/XCharts/GanttChart", priority = 54)]
-        public static void AddGanttChart()
+        [MenuItem("XCharts/CandlestickChart", priority = 54)]
+        [MenuItem("GameObject/XCharts/CandlestickChart", priority = 54)]
+        public static void CandlestickChart()
         {
-            AddChart<GanttChart>("GanttChart");
+            AddChart<CandlestickChart>("CandlestickChart");
         }
 
         [MenuItem("XCharts/Themes Reload")]

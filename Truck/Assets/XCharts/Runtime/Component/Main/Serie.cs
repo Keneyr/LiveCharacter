@@ -65,9 +65,9 @@ namespace XCharts
         /// </summary>
         Candlestick,
         /// <summary>
-        /// 甘特图。甘特图的data至少包含两个数据：[start, end]
+        /// 自定义。
         /// </summary>
-        Gantt,
+        Custom,
     }
 
     /// <summary>
@@ -191,6 +191,7 @@ namespace XCharts
         /// </summary>
         Single
     }
+
     /// <summary>
     /// 采样类型
     /// </summary>
@@ -277,6 +278,7 @@ namespace XCharts
 
         [SerializeField] private bool m_ClickOffset = true;
         [SerializeField] private RoseType m_RoseType = RoseType.None;
+        [FormerlySerializedAs("m_Gap")]
         [SerializeField] private float m_Space;
         [SerializeField] private float[] m_Center = new float[2] { 0.5f, 0.45f };
         [SerializeField] private float[] m_Radius = new float[2] { 0, 80 };
@@ -301,6 +303,17 @@ namespace XCharts
         [SerializeField] private float m_WaveSpeed = 5f;
         [SerializeField] private float m_WaveOffset = 0f;
         [SerializeField] private RadarType m_RadarType = RadarType.Multiple;
+        [SerializeField] private float m_Left;
+        [SerializeField] private float m_Right;
+        [SerializeField] private float m_Top;
+        [SerializeField] private float m_Bottom;
+        [SerializeField] private bool m_InsertDataToHead;
+        [SerializeField] private bool m_CustomBool1;
+        [SerializeField] private bool m_CustomBool2;
+        [SerializeField] private int m_CustomInt1;
+        [SerializeField] private int m_CustomInt2;
+        [SerializeField] private float m_CustomFloat1;
+        [SerializeField] private float m_CustomFloat2;
 
         [SerializeField] private List<SerieData> m_Data = new List<SerieData>();
 
@@ -590,6 +603,11 @@ namespace XCharts
             get { return m_Space; }
             set { if (PropertyUtil.SetStruct(ref m_Space, value)) SetVerticesDirty(); }
         }
+        public float gap
+        {
+            get { return m_Space; }
+            set { if (PropertyUtil.SetStruct(ref m_Space, value)) SetVerticesDirty(); }
+        }
         /// <summary>
         /// the center of chart.
         /// 中心点。
@@ -785,7 +803,7 @@ namespace XCharts
         /// <summary>
         /// 数据项里的数据维数。
         /// </summary>
-        public int showDataDimension { get { return m_ShowDataDimension; } internal set { m_ShowDataDimension = value; } }
+        public int showDataDimension { get { return m_ShowDataDimension; } set { m_ShowDataDimension = value; } }
         /// <summary>
         /// 在Editor的inpsector上是否显示name参数
         /// </summary>
@@ -882,6 +900,81 @@ namespace XCharts
             set { if (PropertyUtil.SetStruct(ref m_WaveSpeed, value)) SetVerticesDirty(); }
         }
         /// <summary>
+        /// Distance between component and the left side of the container.
+        /// 组件离容器左侧的距离。
+        /// </summary>
+        public float left
+        {
+            get { return m_Left; }
+            set { if (PropertyUtil.SetStruct(ref m_Left, value)) SetAllDirty(); }
+        }
+        /// <summary>
+        /// Distance between component and the right side of the container.
+        /// 组件离容器右侧的距离。
+        /// </summary>
+        public float right
+        {
+            get { return m_Right; }
+            set { if (PropertyUtil.SetStruct(ref m_Right, value)) SetAllDirty(); }
+        }
+        /// <summary>
+        /// Distance between component and the top side of the container.
+        /// 组件离容器上侧的距离。
+        /// </summary>
+        public float top
+        {
+            get { return m_Top; }
+            set { if (PropertyUtil.SetStruct(ref m_Top, value)) SetAllDirty(); }
+        }
+        /// <summary>
+        /// Distance between component and the bottom side of the container.
+        /// 组件离容器下侧的距离。
+        /// </summary>
+        public float bottom
+        {
+            get { return m_Bottom; }
+            set { if (PropertyUtil.SetStruct(ref m_Bottom, value)) SetAllDirty(); }
+        }
+        public bool customBool1
+        {
+            get { return m_CustomBool1; }
+            set { if (PropertyUtil.SetStruct(ref m_CustomBool1, value)) SetAllDirty(); }
+        }
+        public bool customBool2
+        {
+            get { return m_CustomBool2; }
+            set { if (PropertyUtil.SetStruct(ref m_CustomBool2, value)) SetAllDirty(); }
+        }
+        public int customInt1
+        {
+            get { return m_CustomInt1; }
+            set { if (PropertyUtil.SetStruct(ref m_CustomInt1, value)) SetAllDirty(); }
+        }
+        public int customInt2
+        {
+            get { return m_CustomInt2; }
+            set { if (PropertyUtil.SetStruct(ref m_CustomInt2, value)) SetAllDirty(); }
+        }
+        public float customFloat1
+        {
+            get { return m_CustomFloat1; }
+            set { if (PropertyUtil.SetStruct(ref m_CustomFloat1, value)) SetAllDirty(); }
+        }
+        public float customFloat2
+        {
+            get { return m_CustomFloat2; }
+            set { if (PropertyUtil.SetStruct(ref m_CustomFloat2, value)) SetAllDirty(); }
+        }
+        /// <summary>
+        /// Whether to add new data at the head or at the end of the list.
+        /// 添加新数据时是在列表的头部还是尾部加入。
+        /// </summary>
+        public bool insertDataToHead
+        {
+            get { return m_InsertDataToHead; }
+            set { if (PropertyUtil.SetStruct(ref m_InsertDataToHead, value)) SetAllDirty(); }
+        }
+        /// <summary>
         /// 系列中的数据内容数组。SerieData可以设置1到n维数据。
         /// </summary>
         public List<SerieData> data { get { return m_Data; } }
@@ -904,7 +997,7 @@ namespace XCharts
         }
 
         public override bool componentDirty { get { return m_ComponentDirty || titleStyle.componentDirty; } }
-        internal override void ClearVerticesDirty()
+        public override void ClearVerticesDirty()
         {
             base.ClearVerticesDirty();
             symbol.ClearVerticesDirty();
@@ -919,7 +1012,7 @@ namespace XCharts
             titleStyle.ClearVerticesDirty();
         }
 
-        internal override void ClearComponentDirty()
+        public override void ClearComponentDirty()
         {
             base.ClearComponentDirty();
             symbol.ClearComponentDirty();
@@ -979,8 +1072,12 @@ namespace XCharts
         public float runtimePieDataTotal { get; internal set; }
         public float runtimeWaveSpeed { get; internal set; }
         public Painter runtimeCanvas { get; internal set; }
-        internal float runtimeCheckValue { get; set; }
+        public float runtimeCheckValue { get; set; }
         public int runtimeGridIndex { get; internal set; }
+        public float runtimeX { get; internal set; }
+        public float runtimeY { get; internal set; }
+        public float runtimeWidth { get; internal set; }
+        public float runtimeHeight { get; internal set; }
         public bool nameDirty { get { return m_NameDirty; } }
 
         private void SetNameDirty()
@@ -1044,7 +1141,7 @@ namespace XCharts
         {
             get
             {
-                float max = int.MinValue;
+                float max = float.MinValue;
                 foreach (var sdata in data)
                 {
                     if (sdata.show && sdata.data[1] > max)
@@ -1063,7 +1160,7 @@ namespace XCharts
         {
             get
             {
-                float max = int.MinValue;
+                float max = float.MinValue;
                 foreach (var sdata in data)
                 {
                     if (sdata.show && sdata.data[0] > max)
@@ -1082,7 +1179,7 @@ namespace XCharts
         {
             get
             {
-                float min = int.MaxValue;
+                float min = float.MaxValue;
                 foreach (var sdata in data)
                 {
                     if (sdata.show && sdata.data[1] < min)
@@ -1101,7 +1198,7 @@ namespace XCharts
         {
             get
             {
-                float min = int.MaxValue;
+                float min = float.MaxValue;
                 foreach (var sdata in data)
                 {
                     if (sdata.show && sdata.data[0] < min)
@@ -1208,11 +1305,17 @@ namespace XCharts
             serieData.data.Add(value);
             serieData.name = dataName;
             serieData.index = xValue;
-            m_Data.Add(serieData);
+            AddSerieDataHeadOrTail(serieData);
             m_ShowDataDimension = 1;
             SetVerticesDirty();
             CheckDataName(dataName);
             return serieData;
+        }
+
+        private void AddSerieDataHeadOrTail(SerieData serieData)
+        {
+            if (m_InsertDataToHead) m_Data.Insert(0, serieData);
+            else m_Data.Add(serieData);
         }
 
         private void CheckDataName(string dataName)
@@ -1243,7 +1346,7 @@ namespace XCharts
             serieData.data.Add(yValue);
             serieData.name = dataName;
             serieData.index = m_Data.Count;
-            m_Data.Add(serieData);
+            AddSerieDataHeadOrTail(serieData);
             m_ShowDataDimension = 2;
             SetVerticesDirty();
             CheckDataName(dataName);
@@ -1270,7 +1373,7 @@ namespace XCharts
             serieData.data.Add(heighest);
             serieData.name = dataName;
             serieData.index = m_Data.Count;
-            m_Data.Add(serieData);
+            AddSerieDataHeadOrTail(serieData);
             m_ShowDataDimension = 4;
             SetVerticesDirty();
             CheckDataName(dataName);
@@ -1306,7 +1409,7 @@ namespace XCharts
                 {
                     serieData.data.Add(valueList[i]);
                 }
-                m_Data.Add(serieData);
+                AddSerieDataHeadOrTail(serieData);
                 SetVerticesDirty();
                 CheckDataName(dataName);
                 return serieData;
@@ -1320,7 +1423,8 @@ namespace XCharts
             while (m_Data.Count > m_MaxCache)
             {
                 m_NeedUpdateFilterData = true;
-                RemoveData(0);
+                if (m_InsertDataToHead) RemoveData(m_Data.Count - 1);
+                else RemoveData(0);
             }
         }
 
@@ -1473,7 +1577,7 @@ namespace XCharts
         public List<SerieData> GetDataList(DataZoom dataZoom = null)
         {
             if (dataZoom != null && dataZoom.enable
-                && (dataZoom.xAxisIndexs.Contains(xAxisIndex) || dataZoom.yAxisIndexs.Contains(yAxisIndex)))
+                && (dataZoom.IsContainsXAxis(xAxisIndex) || dataZoom.IsContainsYAxis(yAxisIndex)))
             {
                 SerieHelper.UpdateFilterData(this, dataZoom);
                 return m_FilterData;
@@ -1590,7 +1694,7 @@ namespace XCharts
             }
         }
 
-        internal float GetBarWidth(float categoryWidth)
+        public float GetBarWidth(float categoryWidth)
         {
             if (m_BarWidth > 1) return m_BarWidth;
             else return m_BarWidth * categoryWidth;
@@ -1650,17 +1754,20 @@ namespace XCharts
             }
         }
 
-        public bool IsIgnoreIndex(int index, int dimension)
+        public bool IsIgnoreIndex(int index, int dimension = 1)
         {
-            if (m_Ignore)
+            var serieData = GetSerieData(index);
+            if (serieData != null)
             {
-                var serieData = GetSerieData(index);
-                if (serieData != null)
-                {
-                    return IsIgnoreValue(serieData.GetData(dimension));
-                }
+                return IsIgnoreValue(serieData, dimension);
             }
             return false;
+        }
+
+        public bool IsIgnoreValue(SerieData serieData, int dimension = 1)
+        {
+            if (serieData.ignore) return true;
+            return IsIgnoreValue(serieData.GetData(dimension));
         }
 
         public bool IsIgnoreValue(float value)
@@ -1694,7 +1801,6 @@ namespace XCharts
                 || type == SerieType.Bar
                 || type == SerieType.Scatter
                 || type == SerieType.Heatmap
-                || type == SerieType.Gantt
                 || type == SerieType.Candlestick;
         }
 
@@ -1765,7 +1871,7 @@ namespace XCharts
                         }
                         else serieData.name = txt.Replace("\"", "").Trim();
                     }
-                    m_Data.Add(serieData);
+                    AddSerieDataHeadOrTail(serieData);
                 }
             }
             else if (temp.IndexOf("value") > -1 && temp.IndexOf("name") > -1)
@@ -1793,7 +1899,7 @@ namespace XCharts
                             serieData.selected = bool.Parse(selected);
                         }
                     }
-                    m_Data.Add(serieData);
+                    AddSerieDataHeadOrTail(serieData);
                 }
             }
             else
@@ -1807,7 +1913,7 @@ namespace XCharts
                     {
                         var serieData = new SerieData();
                         serieData.data = new List<float>() { i, value };
-                        m_Data.Add(serieData);
+                        AddSerieDataHeadOrTail(serieData);
                     }
                 }
             }

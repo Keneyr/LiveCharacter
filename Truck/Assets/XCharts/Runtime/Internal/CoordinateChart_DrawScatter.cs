@@ -44,6 +44,7 @@ namespace XCharts
                 float xDataHig = GetDataHig(xAxis, xValue, grid.runtimeWidth);
                 float yDataHig = GetDataHig(yAxis, yValue, grid.runtimeHeight);
                 var pos = new Vector3(pX + xDataHig, pY + yDataHig);
+                if (!IsInGrid(grid, pos)) continue;
                 serie.dataPoints.Add(pos);
                 serieData.runtimePosition = pos;
                 var datas = serieData.data;
@@ -91,11 +92,11 @@ namespace XCharts
             {
                 int minIndex = axis.runtimeMinLogIndex;
                 float nowIndex = axis.GetLogValue(value);
-                return (nowIndex - minIndex) / (axis.splitNumber - 1) * totalWidth;
+                return (nowIndex - minIndex) / axis.splitNumber * totalWidth;
             }
             else
             {
-                return (value - axis.runtimeMinValue) / (axis.runtimeMaxValue - axis.runtimeMinValue) * totalWidth;
+                return (float)((value - axis.runtimeMinValue) / axis.runtimeMinMaxRange * totalWidth);
             }
         }
     }

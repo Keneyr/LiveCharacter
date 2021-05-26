@@ -1,9 +1,9 @@
-﻿/************************************************/
-/*                                              */
-/*     Copyright (c) 2018 - 2021 monitor1394    */
-/*     https://github.com/monitor1394           */
-/*                                              */
-/************************************************/
+﻿/******************************************/
+/*                                        */
+/*     Copyright (c) 2021 monitor1394     */
+/*     https://github.com/monitor1394     */
+/*                                        */
+/******************************************/
 
 using System;
 using System.Collections.Generic;
@@ -99,6 +99,9 @@ namespace XCharts
         [SerializeField] protected int m_CeilRate = 0;
         [SerializeField] protected bool m_Inverse = false;
         [SerializeField] private bool m_Clockwise = true;
+        [SerializeField] private bool m_InsertDataToHead;
+        [SerializeField] private IconStyle m_IconStyle = new IconStyle();
+        [SerializeField] protected List<Sprite> m_Icons = new List<Sprite>();
         [SerializeField] protected List<string> m_Data = new List<string>();
         [SerializeField] protected AxisLine m_AxisLine = AxisLine.defaultAxisLine;
         [SerializeField] protected AxisName m_AxisName = AxisName.defaultAxisName;
@@ -107,7 +110,7 @@ namespace XCharts
         [SerializeField] protected AxisSplitLine m_SplitLine = AxisSplitLine.defaultSplitLine;
         [SerializeField] protected AxisSplitArea m_SplitArea = AxisSplitArea.defaultSplitArea;
 
-        [NonSerialized] private float m_MinMaxValueRange;
+        [NonSerialized] private double m_MinMaxValueRange;
         [NonSerialized] private bool m_NeedUpdateFilterData;
 
         /// <summary>
@@ -287,6 +290,14 @@ namespace XCharts
             set { if (value != null) { m_Data = value; SetAllDirty(); } }
         }
         /// <summary>
+        /// 类目数据对应的图标。
+        /// </summary>
+        public List<Sprite> icons
+        {
+            get { return m_Icons; }
+            set { if (value != null) { m_Icons = value; SetAllDirty(); } }
+        }
+        /// <summary>
         /// axis Line.
         /// 坐标轴轴线。
         /// /// </summary>
@@ -340,6 +351,23 @@ namespace XCharts
             get { return m_SplitArea; }
             set { if (value != null) { m_SplitArea = value; SetVerticesDirty(); } }
         }
+        /// <summary>
+        /// Whether to add new data at the head or at the end of the list.
+        /// 添加新数据时是在列表的头部还是尾部加入。
+        /// </summary>
+        public bool insertDataToHead
+        {
+            get { return m_InsertDataToHead; }
+            set { if (PropertyUtil.SetStruct(ref m_InsertDataToHead, value)) SetAllDirty(); }
+        }
+        /// <summary>
+        /// 图标样式。
+        /// </summary>
+        public IconStyle iconStyle
+        {
+            get { return m_IconStyle; }
+            set { if (PropertyUtil.SetClass(ref m_IconStyle, value)) SetAllDirty(); }
+        }
         public override bool vertsDirty
         {
             get { return m_VertsDirty || axisLine.anyDirty || axisTick.anyDirty || splitLine.anyDirty || splitArea.anyDirty; }
@@ -348,14 +376,14 @@ namespace XCharts
         {
             get { return m_ComponentDirty || axisName.anyDirty || axisLabel.anyDirty; }
         }
-        internal override void ClearComponentDirty()
+        public override void ClearComponentDirty()
         {
             base.ClearComponentDirty();
             axisName.ClearComponentDirty();
             axisLabel.ClearComponentDirty();
         }
 
-        internal override void ClearVerticesDirty()
+        public override void ClearVerticesDirty()
         {
             base.ClearVerticesDirty();
             axisLine.ClearVerticesDirty();
@@ -364,11 +392,7 @@ namespace XCharts
             splitArea.ClearVerticesDirty();
         }
         public int index { get; internal set; }
-        /// <summary>
-        /// the axis label text list. 
-        /// 坐标轴刻度标签的Text列表。
-        /// </summary>
-        public List<ChartText> axisLabelTextList { get { return m_AxisLabelTextList; } set { m_AxisLabelTextList = value; } }
+        public List<ChartLabel> runtimeAxisLabelList { get { return m_AxisLabelList; } set { m_AxisLabelList = value; } }
         /// <summary>
         /// the current minimun value.
         /// 当前最小值。
@@ -411,14 +435,15 @@ namespace XCharts
         public float runtimeZeroYOffset { get; internal set; }
         public int runtimeMinLogIndex { get { return logBaseE ? (int)Mathf.Log(runtimeMinValue) : (int)Mathf.Log(runtimeMinValue, logBase); } }
         public int runtimeMaxLogIndex { get { return logBaseE ? (int)Mathf.Log(runtimeMaxValue) : (int)Mathf.Log(runtimeMaxValue, logBase); } }
-        internal bool runtimeLastCheckInverse { get; set; }
-        internal float runtimeMinMaxRange { get { return m_MinMaxValueRange; } set { m_MinMaxValueRange = value; } }
-        internal List<string> runtimeData { get { return m_RuntimeData; } }
+        public bool runtimeLastCheckInverse { get; set; }
+        public double runtimeMinMaxRange { get { return m_MinMaxValueRange; } set { m_MinMaxValueRange = value; } }
+        public List<string> runtimeData { get { return m_RuntimeData; } }
+        public float runtimeScaleWidth { get; internal set; }
         private int filterStart;
         private int filterEnd;
         private int filterMinShow;
         private List<string> filterData;
-        private List<ChartText> m_AxisLabelTextList = new List<ChartText>();
+        private List<ChartLabel> m_AxisLabelList = new List<ChartLabel>();
         private GameObject m_TooltipLabel;
         private ChartText m_TooltipLabelText;
         private RectTransform m_TooltipLabelRect;
@@ -450,12 +475,15 @@ namespace XCharts
             axis.logBase = logBase;
             axis.logBaseE = logBaseE;
             axis.ceilRate = ceilRate;
+            axis.insertDataToHead = insertDataToHead;
+            axis.iconStyle = iconStyle.Clone();
             axis.axisLine = axisLine.Clone();
             axis.axisName = axisName.Clone();
             axis.axisTick = axisTick.Clone();
             axis.axisLabel = axisLabel.Clone();
             axis.splitLine = splitLine.Clone();
             axis.splitArea = splitArea.Clone();
+            axis.icons = new List<Sprite>();
             axis.data = new List<string>();
             ChartHelper.CopyList(axis.data, data);
             return axis;
@@ -476,6 +504,8 @@ namespace XCharts
             logBase = axis.logBase;
             logBaseE = axis.logBaseE;
             ceilRate = axis.ceilRate;
+            insertDataToHead = axis.insertDataToHead;
+            iconStyle.Copy(axis.iconStyle);
             axisLine.Copy(axis.axisLine);
             axisName.Copy(axis.axisName);
             axisTick.Copy(axis.axisTick);
@@ -483,6 +513,7 @@ namespace XCharts
             splitLine.Copy(axis.splitLine);
             splitArea.Copy(axis.splitArea);
             ChartHelper.CopyList(data, axis.data);
+            ChartHelper.CopyList<Sprite>(icons, axis.icons);
         }
 
         /// <summary>
@@ -491,6 +522,7 @@ namespace XCharts
         public void ClearData()
         {
             m_Data.Clear();
+            m_Icons.Clear();
             m_RuntimeData.Clear();
             SetAllDirty();
         }
@@ -523,6 +555,14 @@ namespace XCharts
         }
 
         /// <summary>
+        /// 是否为时间轴。
+        /// </summary>
+        public bool IsTime()
+        {
+            return type == AxisType.Time;
+        }
+
+        /// <summary>
         /// 添加一个类目到类目数据列表
         /// </summary>
         /// <param name="category"></param>
@@ -533,10 +573,25 @@ namespace XCharts
                 while (m_Data.Count > maxCache)
                 {
                     m_NeedUpdateFilterData = true;
-                    m_Data.RemoveAt(0);
+                    m_Data.RemoveAt(m_InsertDataToHead ? m_Data.Count - 1 : 0);
                 }
             }
-            m_Data.Add(category);
+            if (m_InsertDataToHead) m_Data.Insert(0, category);
+            else m_Data.Add(category);
+            SetAllDirty();
+        }
+
+        public void AddIcon(Sprite icon)
+        {
+            if (maxCache > 0)
+            {
+                while (m_Icons.Count > maxCache)
+                {
+                    m_Icons.RemoveAt(m_InsertDataToHead ? m_Icons.Count - 1 : 0);
+                }
+            }
+            if (m_InsertDataToHead) m_Icons.Insert(0, icon);
+            else m_Icons.Add(icon);
             SetAllDirty();
         }
 
@@ -568,6 +623,14 @@ namespace XCharts
                 return "";
         }
 
+        public Sprite GetIcon(int index)
+        {
+            if (index >= 0 && index < m_Icons.Count)
+                return m_Icons[index];
+            else
+                return null;
+        }
+
         /// <summary>
         /// 获得指定区域缩放的类目数据列表
         /// </summary>
@@ -575,7 +638,7 @@ namespace XCharts
         /// <returns></returns>
         internal List<string> GetDataList(DataZoom dataZoom)
         {
-            if (dataZoom != null && dataZoom.enable && dataZoom.IsContainsAxisIndex(index))
+            if (dataZoom != null && dataZoom.enable && dataZoom.IsContainsAxis(this))
             {
                 UpdateFilterData(dataZoom);
                 return filterData;
@@ -586,7 +649,8 @@ namespace XCharts
             }
         }
 
-        internal List<string> GetDataList(){
+        internal List<string> GetDataList()
+        {
             return m_Data.Count > 0 ? m_Data : m_RuntimeData;
         }
 
@@ -597,7 +661,7 @@ namespace XCharts
         /// <param name="dataZoom"></param>
         internal void UpdateFilterData(DataZoom dataZoom)
         {
-            if (dataZoom != null && dataZoom.enable && dataZoom.IsContainsAxisIndex(index))
+            if (dataZoom != null && dataZoom.enable && dataZoom.IsContainsAxis(this))
             {
                 var startIndex = (int)((data.Count - 1) * dataZoom.start / 100);
                 var endIndex = (int)((data.Count - 1) * dataZoom.end / 100);
@@ -654,12 +718,12 @@ namespace XCharts
         {
             var minValue = GetCurrMinValue(duration);
             var maxValue = GetCurrMaxValue(duration);
-            for (int i = 0; i < axisLabelTextList.Count; i++)
+            for (int i = 0; i < runtimeAxisLabelList.Count; i++)
             {
-                if (axisLabelTextList[i] != null)
+                if (runtimeAxisLabelList[i] != null)
                 {
                     var text = AxisHelper.GetLabelName(this, coordinateWidth, i, minValue, maxValue, dataZoom, forcePercent);
-                    axisLabelTextList[i].SetText(text);
+                    runtimeAxisLabelList[i].SetText(text);
                 }
             }
         }
@@ -680,6 +744,7 @@ namespace XCharts
 
         internal void SetTooltipLabelActive(bool flag)
         {
+            if (m_TooltipLabel == null) return;
             ChartHelper.SetActive(m_TooltipLabel, flag);
         }
 
@@ -757,7 +822,7 @@ namespace XCharts
             }
         }
 
-        internal float GetCurrMinValue(float duration)
+        public float GetCurrMinValue(float duration)
         {
             if (!Application.isPlaying) return m_RuntimeMinValue;
             if (m_RuntimeMinValue == 0 && m_RuntimeMaxValue == 0) return 0;
@@ -777,7 +842,7 @@ namespace XCharts
             }
         }
 
-        internal float GetCurrMaxValue(float duration)
+        public float GetCurrMaxValue(float duration)
         {
             if (!Application.isPlaying) return m_RuntimeMaxValue;
             if (m_RuntimeMinValue == 0 && m_RuntimeMaxValue == 0) return 0;
@@ -862,7 +927,8 @@ namespace XCharts
                     m_Data = new List<string>()
                     {
                         "x1","x2","x3","x4","x5"
-                    }
+                    },
+                    m_Icons = new List<Sprite>(5),
                 };
                 axis.splitLine.show = false;
                 axis.splitLine.lineStyle.type = LineStyle.Type.None;
@@ -894,6 +960,7 @@ namespace XCharts
                     m_BoundaryGap = false,
                     m_Position = AxisPosition.Left,
                     m_Data = new List<string>(5),
+
                 };
                 axis.splitLine.show = true;
                 axis.splitLine.lineStyle.type = LineStyle.Type.None;

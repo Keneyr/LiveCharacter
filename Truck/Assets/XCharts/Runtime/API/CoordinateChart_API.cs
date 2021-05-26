@@ -33,16 +33,7 @@ namespace XCharts
         /// 两个y轴。
         /// </summary>
         public List<YAxis> yAxes { get { return m_YAxes; } }
-        /// <summary>
-        /// dataZoom component.
-        /// 区域缩放组件。
-        /// </summary>
-        public DataZoom dataZoom { get { return m_DataZooms.Count > 0 ? m_DataZooms[0] : null; } }
-        /// <summary>
-        /// visualMap component.
-        /// 视觉映射组件。
-        /// </summary>
-        public VisualMap visualMap { get { return m_VisualMaps.Count > 0 ? m_VisualMaps[0] : null; } }
+
         /// <summary>
         /// X轴（下）
         /// </summary>
@@ -109,7 +100,26 @@ namespace XCharts
         /// <param name="xAxisIndex">which xAxis should category add to</param>
         public void AddXAxisData(string category, int xAxisIndex = 0)
         {
-            m_XAxes[xAxisIndex].AddData(category);
+            var xAxis = GetXAxis(xAxisIndex);
+            if (xAxis != null)
+            {
+                xAxis.AddData(category);
+            }
+        }
+
+        /// <summary>
+        /// Add an icon to xAxis.
+        /// 添加一个图标到指定的x轴。
+        /// </summary>
+        /// <param name="icon"></param>
+        /// <param name="xAxisIndex"></param>
+        public void AddXAxisIcon(Sprite icon, int xAxisIndex = 0)
+        {
+            var xAxis = GetXAxis(xAxisIndex);
+            if (xAxis != null)
+            {
+                xAxis.AddIcon(icon);
+            }
         }
 
         /// <summary>
@@ -120,7 +130,26 @@ namespace XCharts
         /// <param name="yAxisIndex">which yAxis should category add to</param>
         public void AddYAxisData(string category, int yAxisIndex = 0)
         {
-            m_YAxes[yAxisIndex].AddData(category);
+            var yAxis = GetYAxis(yAxisIndex);
+            if (yAxis != null)
+            {
+                yAxis.AddData(category);
+            }
+        }
+
+        /// <summary>
+        /// Add an icon to yAxis.
+        /// 添加一个图标到指定的y轴。
+        /// </summary>
+        /// <param name="icon"></param>
+        /// <param name="yAxisIndex"></param>
+        public void AddYAxisIcon(Sprite icon, int yAxisIndex = 0)
+        {
+            var yAxis = GetYAxis(yAxisIndex);
+            if (yAxis != null)
+            {
+                yAxis.AddIcon(icon);
+            }
         }
 
         /// <summary>
@@ -204,7 +233,13 @@ namespace XCharts
         /// </summary>
         public void RefreshDataZoom()
         {
-            RefreshDataZoomLabel();
+            foreach (var handler in m_ComponentHandlers)
+            {
+                if (handler is DataZoomHandler)
+                {
+                    (handler as DataZoomHandler).RefreshDataZoomLabel();
+                }
+            }
         }
 
         /// <summary>

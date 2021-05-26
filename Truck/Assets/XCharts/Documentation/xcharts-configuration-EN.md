@@ -54,6 +54,7 @@ __Sub component:__
 * [SerieSymbol](#SerieSymbol)  
 * [TextLimit](#TextLimit)  
 * [TextStyle](#TextStyle)  
+* [IconStyle](#IconStyle)  
 
 ## `Theme`
 
@@ -211,6 +212,8 @@ The component of settings related to text.
 * `fontSize`: the size of text. [default: `18`].
 * `fontStyle`: the font style of text. [default: `FontStyle.Normal`].
 * `lineSpacing`: the space of text line.  [default: `1f`].
+* `autoWrap`: Whether to wrap lines.
+* `autoAlign`: Whether to let the system automatically set alignment. If true, the system automatically selects alignment, and if false, use alignment.
 
 ## `Tooltip`
 
@@ -266,6 +269,9 @@ Vessel component for liquid chart. There can be multiple vessels in a Chart, whi
 * `backgroundColor`: Background color of polar, which is transparent by default. [default: `Color.clear`]
 * `color`: Vessel color. The default is consistent with Serie. [default: `Color32(70, 70, 240, 255)`]
 * `autoColor`: Whether automatic color. If true, the color matches serie. [default: `true`]
+* `width`：The width of vessel. This value is valid when `shape` is `Rect`.
+* `height`：The height of vessel. This value is valid when `shape` is `Rect`.
+* `cornerRadius`： The radius of rounded corner. This value is valid when `shape` is `Rect`.
 
 ## `DataZoom`
 
@@ -392,13 +398,16 @@ The x axis in cartesian(rectangular) coordinate. a grid component can place at m
 * `boundaryGap`: The boundary gap on both sides of a coordinate axis.
 * `maxCache`: The max number of axis data cache. The first data will be remove when the size of axis data is larger then `maxCache`.
 * `inverse`: Whether the axis are reversed or not. Invalid in `Category` axis.
+* `insertDataToHead`: Whether to add new data at the head or at the end of the list.
 * `data`: Category data, valid in the `Category` axis.
+* `icons`: icon list.
 * `axisLine`: the style of axis line [AxisLine](#AxisLine).
 * `axisName`: the style of axis name [AxisName](#AxisName).
 * `axisTick`: the style of axis tick [AxisTick](#AxisTick).
 * `axisLabel`: the style of axis label [AxisLabel](#AxisLabel).
 * `splitLine`: the style of axis split line [AxisSplitLine](#SplitLine).
 * `splitArea`: the style of axis split area [AxisSplitArea](#AxisSplitArea).
+* `iconStyle`: the style of the axis scale icon [IconStyle](#IconStyle).
 
 ## `Background`
 
@@ -469,6 +478,7 @@ Line chart serie.
 * `emphasis`: 高亮样式 [Emphasis](#Emphasis)。
 * `animation`: 起始动画 [SerieAnimation](#SerieAnimation)。
 * `lineArrow`: 折线图的箭头 [LineArrow](#LineArrow)。
+* `insertDataToHead`: Whether to add new data at the head or at the end of the list.
 * `data`: 系列中的数据项 [SerieData](#SerieData) 数组，可以设置`1`到`n`维数据。
 
 ## `Serie-Bar`
@@ -668,28 +678,15 @@ K线图系列。
 * `animation`：起始动画 [SerieAnimation](#SerieAnimation)。
 * `data`：系列中的数据项 [SerieData](#SerieData) 数组，K线图至少需要4个维度的数组`[open, close, lowest, highest]`。
 
-## `Serie-Gantt`
-
-甘特图系列。支持类目轴和时间轴的甘特图，当 `X` 轴为类目轴时，数据为类目的索引，`X` 轴为时间轴时，数据为时间戳（秒为单位）。`Y` 轴默认为类目轴，显示的数据来源于`Serie`的`Data`的`Name`。
-甘特图默认支持开始和结束时间，也可以额外支持实际开始和结束时间。
-
-* `show`：系列是否显示在图表上。
-* `type`：`Gantt`。
-* `name`：系列名称。用于 `tooltip` 的显示，`legend` 的图例筛选。
-* `xAxisIndex`：使用的坐标轴X轴的 `index`，在单个图表实例中存在多个坐标轴的时候有用。
-* `yAxisIndex`：使用的坐标轴Y轴的 `index`，在单个图表实例中存在多个坐标轴的时候有用。
-* `clip`：是否裁剪超出坐标系部分的图形。
-* `large`：是否开启大数据量优化，在数据图形特别多而出现卡顿时候可以开启。开启后配合 largeThreshold 在数据量大于指定阈值的时候对绘制进行优化。缺点：优化后不能自定义设置单个数据项的样式，不能显示Label，折线图不绘制Symbol。
-* `largeThreshold`：开启大数量优化的阈值。只有当开启了large并且数据量大于该阀值时才进入性能模式。
-* `itemStyle`：甘特图的柱条样式，包括设置背景颜色和边框等 [ItemStyle](#ItemStyle)。
-* `emphasis`：高亮样式 [Emphasis](#Emphasis)。
-* `animation`：起始动画 [SerieAnimation](#SerieAnimation)。
-* `data`：系列中的数据项 [SerieData](#SerieData) 数组，甘特图至少需要2个维度的数组`[start, end]`，也支持4个维度的数组`[start, end, actualStart, actualEnd]`。当 X 轴为类目轴时，数据为类目的索引，X 轴为时间轴时，数据为时间戳（秒为单位）。
-
 ## `Settings`
 
 全局参数设置组件。一般情况下可使用默认值，当有需要时可进行调整。
 
+* `reversePainter`：Painter是否逆序。逆序时index大的serie最先绘制。
+* `maxPainter`：默认最大Painter数据，当Serie数量大于maxPainter时会平均分配Painter。
+* `basePainterMaterial`：Base Pointer 材质球，设置后会影响Axis等。
+* `seriePainterMaterial`：Serie Pointer 材质球，设置后会影响所有Serie。
+* `topPainterMaterial`：Top Pointer 材质球，设置后会影响Tooltip等。
 * `lineSmoothStyle`: 曲线平滑系数。通过调整平滑系数可以改变曲线的曲率，得到外观稍微有变化的不同曲线。
 * `lineSmoothness`: 曲线平滑度。值越小曲线越平滑，但顶点数也会随之增加。当开启有渐变的区域填充时，数值越大渐变过渡效果越差。
 * `lineSegmentDistance`:  线段的分割距离。普通折线图的线是由很多线段组成，段数由该数值决定。值越小段数越多，但顶点数也会随之增加。当开启有渐变的区域填充时，数值越大渐变过渡效果越差。
@@ -730,6 +727,9 @@ K线图系列。
 * `numericFormatter`: 标准数字格式字符串。用于将数值格式化显示为字符串。使用`Axx`的形式: `A`是格式说明符的单字符，支持`C`货币、`D`十进制、`E`指数、`F`顶点数、`G`常规、`N`数字、`P`百分比、`R`往返过程、`X`十六进制等九种。`xx`是精度说明，从`0`-`99`。
 * `showAsPositiveNumber`: 将负数数值显示为正数。一般和`Serie`的`showAsPositiveNumber`配合使用。
 * `onZero`: 刻度标签显示在`0`刻度上。
+* `width`：刻度标签的宽。当为0时系统自动设置。
+* `height`：刻度标签的高。当为0时系统自动设置。
+
 * `textLimit`: 文本自适应 [TextLimit](#TextLimit)。只在类目轴中有效。
 * `textStyle`: The style of text [TextStyle](#TextStyle).
 
@@ -772,6 +772,8 @@ K线图系列。
 * `inside`: 坐标轴刻度是否朝内，默认朝外。
 * `length`: 坐标轴刻度的长度。
 * `width`: 坐标轴刻度的宽度。默认为0时宽度和坐标轴一致。
+* `showStartTick`：是否显示第一个刻度。
+* `showEndTick`：是否显示最后一个刻度。
 
 ## `Emphasis`
 
@@ -917,6 +919,16 @@ K线图系列。
 * `startIndex`: 开始显示图形标记的索引。
 * `interval`: 显示图形标记的间隔。`0`表示显示所有标签，`1`表示隔一个隔显示一个标签，以此类推。
 * `forceShowLast`: 是否强制显示最后一个图形标记。默认为 `false`。
+
+## `IconStyle`
+
+* `show` : whether to show the icon.
+* `Layer` : Shows on top or bottom.
+* `Sprite` : Icon.
+* `color` : color.
+* `width` : The width of the icon.
+* `height` : the height of the icon.
+* `Offset` : Offset.
 
 [返回首页](https://github.com/monitor1394/unity-ugui-XCharts)  
 [XChartsAPI接口](XChartsAPI.md)  

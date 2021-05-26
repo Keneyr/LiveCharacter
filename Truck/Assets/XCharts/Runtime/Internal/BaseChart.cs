@@ -75,7 +75,7 @@ namespace XCharts
         protected Action<VertexHelper, Serie> m_OnCustomDrawSerieAfterCallback;
         protected Action<PointerEventData, int, int> m_OnPointerClickPie;
 
-        internal bool m_RefreshLabel = false;
+        protected bool m_RefreshLabel = false;
         internal bool m_ReinitLabel = false;
         internal bool m_ReinitTitle = false;
         internal bool m_CheckAnimation = false;
@@ -86,7 +86,8 @@ namespace XCharts
         protected GameObject m_SerieLabelRoot;
         private Theme m_CheckTheme = 0;
 
-        private List<IDrawSerie> m_DrawSeries = new List<IDrawSerie>();
+        protected List<IDrawSerie> m_DrawSeries = new List<IDrawSerie>();
+        protected List<IComponentHandler> m_ComponentHandlers = new List<IComponentHandler>();
 
         protected override void InitComponent()
         {
@@ -102,11 +103,21 @@ namespace XCharts
             m_DrawSeries.Add(new DrawSerieGauge(this));
             m_DrawSeries.Add(new DrawSerieLiquid(this));
             m_DrawSeries.Add(new DrawSerieRadar(this));
-            foreach (var drawSerie in m_DrawSeries) drawSerie.InitComponent();
+            foreach (var draw in m_DrawSeries) draw.InitComponent();
+
+            m_ComponentHandlers.Clear();
+            m_ComponentHandlers.Add(new VisualMapHandler(this));
+            m_ComponentHandlers.Add(new DataZoomHandler(this));
+            foreach (var draw in m_ComponentHandlers) draw.Init();
         }
 
         protected override void Awake()
         {
+            if (m_Settings == null) m_Settings = Settings.DefaultSettings;
+            if (m_Series == null) m_Series = Series.defaultSeries; ;
+            if (m_Titles.Count == 0) m_Titles = new List<Title>() { Title.defaultTitle };
+            if (m_Legends.Count == 0) m_Legends = new List<Legend>() { Legend.defaultLegend };
+            if (m_Tooltips.Count == 0) m_Tooltips = new List<Tooltip>() { Tooltip.defaultTooltip };
             CheckTheme();
             base.Awake();
             m_Series.AnimationReset();
@@ -118,23 +129,18 @@ namespace XCharts
         protected override void Reset()
         {
             base.Reset();
-            m_Theme = ChartTheme.Default;
-            m_Settings = Settings.DefaultSettings;
-            m_Titles = new List<Title>() { Title.defaultTitle };
-            m_Legends = new List<Legend>() { Legend.defaultLegend };
-            m_Tooltips = new List<Tooltip>() { Tooltip.defaultTooltip };
-
+            m_Theme = null;
+            m_Settings = null;
+            m_Series = null;
+            m_Titles.Clear();
+            m_Legends.Clear();
+            m_Tooltips.Clear();
             var sizeDelta = rectTransform.sizeDelta;
             if (sizeDelta.x < 580 && sizeDelta.y < 300)
             {
                 rectTransform.sizeDelta = new Vector2(580, 300);
             }
             ChartHelper.HideAllObject(transform);
-            m_Theme = ChartTheme.Default;
-            m_Titles = new List<Title>() { Title.defaultTitle };
-            m_Legends = new List<Legend>() { Legend.defaultLegend };
-            m_Tooltips = new List<Tooltip>() { Tooltip.defaultTooltip };
-            m_Series = Series.defaultSeries;
             Awake();
         }
 #endif
@@ -152,8 +158,9 @@ namespace XCharts
             CheckTooltip();
             CheckRefreshChart();
             CheckRefreshLabel();
-            CheckAnimation();
+            Internal_CheckAnimation();
             foreach (var draw in m_DrawSeries) draw.Update();
+            foreach (var draw in m_ComponentHandlers) draw.Update();
         }
 
         internal Painter GetPainter(int index)
@@ -169,14 +176,18 @@ namespace XCharts
         {
             m_Painter.Refresh();
         }
+        internal void RefreshTopPainter()
+        {
+            m_PainterTop.Refresh();
+        }
 
-        internal void RefreshPainter(int index)
+        public void RefreshPainter(int index)
         {
             var painter = GetPainter(index);
             RefreshPainter(painter);
         }
 
-        internal void RefreshPainter(Serie serie)
+        public void RefreshPainter(Serie serie)
         {
             RefreshPainter(GetPainterIndexBySerie(serie));
         }
@@ -316,17 +327,20 @@ namespace XCharts
         protected override void InitPainter()
         {
             base.InitPainter();
+            m_Painter.material = settings.basePainterMaterial;
             m_PainterList.Clear();
             if (settings == null) return;
             var sizeDelta = new Vector2(m_GraphWidth, m_GraphHeight);
             for (int i = 0; i < settings.maxPainter; i++)
             {
-                var painter = ChartHelper.AddPainterObject("painter_" + i, transform, m_GraphMinAnchor,
-                    m_GraphMaxAnchor, m_GraphPivot, sizeDelta, chartHideFlags, 2 + i);
+                var index = settings.reversePainter ? settings.maxPainter - 1 - i : i;
+                var painter = ChartHelper.AddPainterObject("painter_" + index, transform, m_GraphMinAnchor,
+                    m_GraphMaxAnchor, m_GraphPivot, sizeDelta, chartHideFlags, 2 + index);
                 painter.index = m_PainterList.Count;
                 painter.type = Painter.Type.Serie;
                 painter.onPopulateMesh = OnDrawPainterSerie;
                 painter.SetActive(false, m_DebugMode);
+                painter.material = settings.seriePainterMaterial;
                 m_PainterList.Add(painter);
             }
             m_PainterTop = ChartHelper.AddPainterObject("painter_t", transform, m_GraphMinAnchor,
@@ -334,6 +348,7 @@ namespace XCharts
             m_PainterTop.type = Painter.Type.Top;
             m_PainterTop.onPopulateMesh = OnDrawPainterTop;
             m_PainterTop.SetActive(true, m_DebugMode);
+            m_PainterTop.material = settings.topPainterMaterial;
         }
 
         private void InitTitles()
@@ -716,7 +731,7 @@ namespace XCharts
             }
         }
 
-        protected void CheckAnimation()
+        public void Internal_CheckAnimation()
         {
             if (!m_CheckAnimation)
             {
@@ -767,6 +782,31 @@ namespace XCharts
         {
             base.OnPointerDown(eventData);
             foreach (var drawSerie in m_DrawSeries) drawSerie.OnPointerDown(eventData);
+            foreach (var handler in m_ComponentHandlers) handler.OnPointerDown(eventData);
+        }
+
+        public override void OnBeginDrag(PointerEventData eventData)
+        {
+            base.OnBeginDrag(eventData);
+            foreach (var handler in m_ComponentHandlers) handler.OnBeginDrag(eventData);
+        }
+
+        public override void OnDrag(PointerEventData eventData)
+        {
+            base.OnDrag(eventData);
+            foreach (var handler in m_ComponentHandlers) handler.OnDrag(eventData);
+        }
+
+        public override void OnEndDrag(PointerEventData eventData)
+        {
+            base.OnEndDrag(eventData);
+            foreach (var handler in m_ComponentHandlers) handler.OnEndDrag(eventData);
+        }
+
+        public override void OnScroll(PointerEventData eventData)
+        {
+            base.OnScroll(eventData);
+            foreach (var handler in m_ComponentHandlers) handler.OnScroll(eventData);
         }
 
         protected virtual void OnLegendButtonClick(int index, string legendName, bool show)
@@ -825,7 +865,8 @@ namespace XCharts
             DrawBackground(vh);
             DrawPainterBase(vh);
             DrawLegend(vh);
-            foreach (var drawSerie in m_DrawSeries) drawSerie.DrawBase(vh);
+            foreach (var draw in m_ComponentHandlers) draw.DrawBase(vh);
+            foreach (var draw in m_DrawSeries) draw.DrawBase(vh);
             if (m_OnCustomDrawBaseCallback != null)
             {
                 m_OnCustomDrawBaseCallback(vh);
@@ -859,6 +900,7 @@ namespace XCharts
         {
             vh.Clear();
             DrawPainterTop(vh);
+            foreach (var draw in m_ComponentHandlers) draw.DrawTop(vh);
             if (m_OnCustomDrawTopCallback != null)
             {
                 m_OnCustomDrawTopCallback(vh);
@@ -869,7 +911,9 @@ namespace XCharts
         protected virtual void DrawPainterSerie(VertexHelper vh, Serie serie)
         {
             foreach (var drawSerie in m_DrawSeries)
+            {
                 drawSerie.DrawSerie(vh, serie);
+            }
         }
 
         protected virtual void DrawPainterTop(VertexHelper vh)
@@ -974,7 +1018,7 @@ namespace XCharts
                 cornerRadius, backgroundColor, smoothness);
         }
 
-        internal void DrawLabelBackground(VertexHelper vh, Serie serie, SerieData serieData)
+        public void DrawLabelBackground(VertexHelper vh, Serie serie, SerieData serieData)
         {
             if (serieData == null || serieData.labelObject == null) return;
             var serieLabel = SerieHelper.GetSerieLabel(serie, serieData);

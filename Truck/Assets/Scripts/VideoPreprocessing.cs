@@ -179,6 +179,7 @@ public static class VideoPreprocessing
     static void TestShowLineChart(float[] errors)
     {
         GameObject gameObject = new GameObject("errors");
+        gameObject.transform.parent = GameObject.Find("Canvas").transform;
         var chart = gameObject.GetComponent<XCharts.LineChart>();
         if (chart == null)
         {
@@ -208,7 +209,7 @@ public static class VideoPreprocessing
 
         for (int i = 0; i < errors.Length; i += 2)
         {
-            chart.AddXAxisData("",i);
+            chart.AddXAxisData("" + i);
             chart.AddData(0, errors[i]);
             //chart.AddData(0, Random.Range(10, 20));
         }

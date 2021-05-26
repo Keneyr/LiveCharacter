@@ -27,12 +27,12 @@ namespace XCharts
             var grid = GetSerieGridOrDefault(serie);
             var showData = serie.GetDataList(dataZoom);
             float categoryWidth = AxisHelper.GetDataWidth(yAxis, grid.runtimeHeight, showData.Count, dataZoom);
-            float barGap = GetBarGap();
-            float totalBarWidth = GetBarTotalWidth(categoryWidth, barGap);
+            float barGap = Internal_GetBarGap(SerieType.Bar);
+            float totalBarWidth = Internal_GetBarTotalWidth(categoryWidth, barGap, SerieType.Bar);
             float barWidth = serie.GetBarWidth(categoryWidth);
             float offset = (categoryWidth - totalBarWidth) / 2;
             float barGapWidth = barWidth + barWidth * barGap;
-            float space = serie.barGap == -1 ? offset : offset + GetBarIndex(serie) * barGapWidth;
+            float space = serie.barGap == -1 ? offset : offset + Internal_GetBarIndex(serie, SerieType.Bar) * barGapWidth;
             var isStack = SeriesHelper.IsStack(m_Series, serie.stack, SerieType.Bar);
             m_StackSerieData.Clear();
             if (isStack) SeriesHelper.UpdateStackDataList(m_Series, serie, dataZoom, m_StackSerieData);
@@ -49,7 +49,7 @@ namespace XCharts
             for (int i = serie.minShow; i < maxCount; i++)
             {
                 var serieData = showData[i];
-                if (serie.IsIgnoreValue(serieData.GetData(1)))
+                if (serie.IsIgnoreValue(serieData))
                 {
                     serie.dataPoints.Add(Vector3.zero);
                     continue;
@@ -81,19 +81,28 @@ namespace XCharts
                 var valueTotal = 0f;
                 if (isPercentStack)
                 {
-                    valueTotal = GetSameStackTotalValue(serie.stack, i);
+                    valueTotal = Internal_GetBarSameStackTotalValue(serie.stack, i, SerieType.Bar);
                     barHig = valueTotal != 0 ? (value / valueTotal * grid.runtimeWidth) : 0;
                 }
                 else
                 {
-                    valueTotal = xMaxValue - xMinValue;
-                    if (valueTotal != 0)
-                        barHig = (xMinValue > 0 ? value - xMinValue : value)
-                            / valueTotal * grid.runtimeWidth;
+                    if (yAxis.IsLog())
+                    {
+                        int minIndex = xAxis.runtimeMinLogIndex;
+                        float nowIndex = xAxis.GetLogValue(value);
+                        barHig = (nowIndex - minIndex) / xAxis.splitNumber * grid.runtimeWidth;
+                    }
+                    else
+                    {
+                        valueTotal = xMaxValue - xMinValue;
+                        if (valueTotal != 0)
+                            barHig = (xMinValue > 0 ? value - xMinValue : value)
+                                / valueTotal * grid.runtimeWidth;
+                    }
                 }
                 serieData.runtimeStackHig = barHig;
                 var isBarEnd = false;
-                float currHig = CheckAnimation(serie, i, barHig, out isBarEnd);
+                float currHig = Internal_CheckBarAnimation(serie, i, barHig, out isBarEnd);
                 if (!isBarEnd) isAllBarEnd = false;
                 Vector3 plt, prt, prb, plb, top;
                 if (value < 0)
@@ -106,16 +115,19 @@ namespace XCharts
                 else
                 {
                     plt = new Vector3(pX + borderWidth, pY + space + barWidth - borderWidth);
-                    prt = new Vector3(pX + currHig - borderWidth , pY + space + barWidth - borderWidth);
-                    prb = new Vector3(pX + currHig - borderWidth , pY + space + borderWidth);
+                    prt = new Vector3(pX + currHig - borderWidth, pY + space + barWidth - borderWidth);
+                    prb = new Vector3(pX + currHig - borderWidth, pY + space + borderWidth);
                     plb = new Vector3(pX + borderWidth, pY + space + borderWidth);
                 }
                 top = new Vector3(pX + currHig - borderWidth, pY + space + barWidth / 2);
-                plt = ClampInGrid(grid, plt);
-                prt = ClampInGrid(grid, prt);
-                prb = ClampInGrid(grid, prb);
-                plb = ClampInGrid(grid, plb);
-                top = ClampInGrid(grid, top);
+                if (serie.clip)
+                {
+                    plt = ClampInGrid(grid, plt);
+                    prt = ClampInGrid(grid, prt);
+                    prb = ClampInGrid(grid, prb);
+                    plb = ClampInGrid(grid, plb);
+                    top = ClampInGrid(grid, top);
+                }
                 serie.dataPoints.Add(top);
                 if (serie.show)
                 {
@@ -143,7 +155,7 @@ namespace XCharts
             }
         }
 
-        private float CheckAnimation(Serie serie, int dataIndex, float barHig, out bool isBarEnd)
+        public float Internal_CheckBarAnimation(Serie serie, int dataIndex, float barHig, out bool isBarEnd)
         {
             float currHig = serie.animation.CheckBarProgress(dataIndex, barHig, serie.dataCount, out isBarEnd);
             if (!serie.animation.IsFinish())
@@ -166,12 +178,12 @@ namespace XCharts
             m_StackSerieData.Clear();
             if (isStack) SeriesHelper.UpdateStackDataList(m_Series, serie, dataZoom, m_StackSerieData);
             float categoryWidth = AxisHelper.GetDataWidth(xAxis, grid.runtimeWidth, showData.Count, dataZoom);
-            float barGap = GetBarGap();
-            float totalBarWidth = GetBarTotalWidth(categoryWidth, barGap);
+            float barGap = Internal_GetBarGap(SerieType.Bar);
+            float totalBarWidth = Internal_GetBarTotalWidth(categoryWidth, barGap, SerieType.Bar);
             float barWidth = serie.GetBarWidth(categoryWidth);
             float offset = (categoryWidth - totalBarWidth) / 2;
             float barGapWidth = barWidth + barWidth * barGap;
-            float space = serie.barGap == -1 ? offset : offset + GetBarIndex(serie) * barGapWidth;
+            float space = serie.barGap == -1 ? offset : offset + Internal_GetBarIndex(serie, SerieType.Bar) * barGapWidth;
             int maxCount = serie.maxShow > 0
                 ? (serie.maxShow > showData.Count ? showData.Count : serie.maxShow)
                 : showData.Count;
@@ -185,7 +197,7 @@ namespace XCharts
             for (int i = serie.minShow; i < maxCount; i++)
             {
                 var serieData = showData[i];
-                if (serie.IsIgnoreValue(serieData.GetData(1)))
+                if (serie.IsIgnoreValue(serieData))
                 {
                     serie.dataPoints.Add(Vector3.zero);
                     continue;
@@ -212,23 +224,32 @@ namespace XCharts
                 }
 
                 var barHig = 0f;
-                var valueTotal = 0f;
+                double valueTotal = 0f;
                 if (isPercentStack)
                 {
-                    valueTotal = GetSameStackTotalValue(serie.stack, i);
-                    barHig = valueTotal != 0 ? (value / valueTotal * grid.runtimeHeight) : 0;
+                    valueTotal = Internal_GetBarSameStackTotalValue(serie.stack, i, SerieType.Bar);
+                    barHig = valueTotal != 0 ? (float)(value / valueTotal * grid.runtimeHeight) : 0;
                 }
                 else
                 {
-                    valueTotal = yMaxValue - yMinValue;
+                    valueTotal = (double)(yMaxValue - yMinValue);
                     if (valueTotal != 0)
                     {
-                        barHig = (yMinValue > 0 ? value - yMinValue : value) / valueTotal * grid.runtimeHeight;
+                        if (yAxis.IsLog())
+                        {
+                            int minIndex = yAxis.runtimeMinLogIndex;
+                            float nowIndex = yAxis.GetLogValue(value);
+                            barHig = (nowIndex - minIndex) / yAxis.splitNumber * grid.runtimeHeight;
+                        }
+                        else
+                        {
+                            barHig = (float)((yMinValue > 0 ? value - yMinValue : value) / valueTotal * grid.runtimeHeight);
+                        }
                     }
                 }
                 serieData.runtimeStackHig = barHig;
                 var isBarEnd = false;
-                float currHig = CheckAnimation(serie, i, barHig, out isBarEnd);
+                float currHig = Internal_CheckBarAnimation(serie, i, barHig, out isBarEnd);
                 if (!isBarEnd) isAllBarEnd = false;
                 Vector3 plb, plt, prt, prb, top;
                 if (value < 0)
@@ -301,7 +322,6 @@ namespace XCharts
                     plt = ClampInGrid(grid, plt);
                     prt = ClampInGrid(grid, prt);
                 }
-                var borderColor = itemStyle.borderColor;
                 var itemWidth = Mathf.Abs(prb.x - plt.x);
                 var itemHeight = Mathf.Abs(prt.y - plb.y);
                 var center = new Vector3((plt.x + prb.x) / 2, (prt.y + plb.y) / 2);
@@ -314,10 +334,10 @@ namespace XCharts
                     }
                     else
                     {
-                        CheckClipAndDrawPolygon(vh, plb, plt, prt, prb, areaColor, areaToColor, serie.clip, grid);
+                        Internal_CheckClipAndDrawPolygon(vh, plb, plt, prt, prb, areaColor, areaToColor, serie.clip, grid);
                     }
-                    UGL.DrawBorder(vh, center, itemWidth, itemHeight, borderWidth, borderColor, 0,
-                        itemStyle.cornerRadius, isYAxis);
+                    UGL.DrawBorder(vh, center, itemWidth, itemHeight, borderWidth, itemStyle.borderColor,
+                        itemStyle.borderToColor, 0, itemStyle.cornerRadius, isYAxis);
                 }
             }
             else
@@ -329,7 +349,6 @@ namespace XCharts
                     plt = ClampInGrid(grid, plt);
                     prt = ClampInGrid(grid, prt);
                 }
-                var borderColor = itemStyle.borderColor;
                 var itemWidth = Mathf.Abs(prt.x - plb.x);
                 var itemHeight = Mathf.Abs(plt.y - prb.y);
                 var center = new Vector3((plb.x + prt.x) / 2, (plt.y + prb.y) / 2);
@@ -342,11 +361,11 @@ namespace XCharts
                     }
                     else
                     {
-                        CheckClipAndDrawPolygon(vh, ref prb, ref plb, ref plt, ref prt, areaColor, areaToColor,
+                        Internal_CheckClipAndDrawPolygon(vh, ref prb, ref plb, ref plt, ref prt, areaColor, areaToColor,
                             serie.clip, grid);
                     }
-                    UGL.DrawBorder(vh, center, itemWidth, itemHeight, borderWidth, borderColor, 0,
-                        itemStyle.cornerRadius, isYAxis);
+                    UGL.DrawBorder(vh, center, itemWidth, itemHeight, borderWidth, itemStyle.borderColor,
+                        itemStyle.borderToColor, 0, itemStyle.cornerRadius, isYAxis);
                 }
             }
         }
@@ -361,14 +380,14 @@ namespace XCharts
             {
                 plt = (plb + plt) / 2;
                 prt = (prt + prb) / 2;
-                CheckClipAndDrawZebraLine(vh, plt, prt, barWidth / 2, serie.barZebraWidth, serie.barZebraGap,
+                Internal_CheckClipAndDrawZebraLine(vh, plt, prt, barWidth / 2, serie.barZebraWidth, serie.barZebraGap,
                     areaColor, serie.clip, grid);
             }
             else
             {
                 plb = (prb + plb) / 2;
                 plt = (plt + prt) / 2;
-                CheckClipAndDrawZebraLine(vh, plb, plt, barWidth / 2, serie.barZebraWidth, serie.barZebraGap,
+                Internal_CheckClipAndDrawZebraLine(vh, plb, plt, barWidth / 2, serie.barZebraWidth, serie.barZebraGap,
                     areaColor, serie.clip, grid);
             }
         }
@@ -397,14 +416,14 @@ namespace XCharts
                             var barLen = prt.x - plt.x;
                             var rectStartColor = Color32.Lerp(areaColor, areaToColor, radius / barLen);
                             var rectEndColor = Color32.Lerp(areaColor, areaToColor, (barLen - radius) / barLen);
-                            CheckClipAndDrawPolygon(vh, plb + diff, plt + diff, prt - diff, prb - diff, rectStartColor,
+                            Internal_CheckClipAndDrawPolygon(vh, plb + diff, plt + diff, prt - diff, prb - diff, rectStartColor,
                                 rectEndColor, serie.clip, grid);
                             UGL.DrawSector(vh, pcl, radius, areaColor, rectStartColor, 180, 360, 1, isYAxis);
                             UGL.DrawSector(vh, pcr, radius, rectEndColor, areaToColor, 0, 180, 1, isYAxis);
                         }
                         else
                         {
-                            CheckClipAndDrawPolygon(vh, plb + diff, plt + diff, prt - diff, prb - diff, areaColor,
+                            Internal_CheckClipAndDrawPolygon(vh, plb + diff, plt + diff, prt - diff, prb - diff, areaColor,
                                 areaToColor, serie.clip, grid);
                             UGL.DrawSector(vh, pcl, radius, areaColor, 180, 360);
                             UGL.DrawSector(vh, pcr, radius, areaToColor, 0, 180);
@@ -422,14 +441,14 @@ namespace XCharts
                             var barLen = plt.x - prt.x;
                             var rectStartColor = Color32.Lerp(areaColor, areaToColor, radius / barLen);
                             var rectEndColor = Color32.Lerp(areaColor, areaToColor, (barLen - radius) / barLen);
-                            CheckClipAndDrawPolygon(vh, plb - diff, plt - diff, prt + diff, prb + diff, rectStartColor,
+                            Internal_CheckClipAndDrawPolygon(vh, plb - diff, plt - diff, prt + diff, prb + diff, rectStartColor,
                                 rectEndColor, serie.clip, grid);
                             UGL.DrawSector(vh, pcl, radius, rectStartColor, areaColor, 0, 180, 1, isYAxis);
                             UGL.DrawSector(vh, pcr, radius, areaToColor, rectEndColor, 180, 360, 1, isYAxis);
                         }
                         else
                         {
-                            CheckClipAndDrawPolygon(vh, plb - diff, plt - diff, prt + diff, prb + diff, areaColor,
+                            Internal_CheckClipAndDrawPolygon(vh, plb - diff, plt - diff, prt + diff, prb + diff, areaColor,
                                 areaToColor, serie.clip, grid);
                             UGL.DrawSector(vh, pcl, radius, areaColor, 0, 180);
                             UGL.DrawSector(vh, pcr, radius, areaToColor, 180, 360);
@@ -451,14 +470,14 @@ namespace XCharts
                             var barLen = plt.y - plb.y;
                             var rectStartColor = Color32.Lerp(areaColor, areaToColor, radius / barLen);
                             var rectEndColor = Color32.Lerp(areaColor, areaToColor, (barLen - radius) / barLen);
-                            CheckClipAndDrawPolygon(vh, prb + diff, plb + diff, plt - diff, prt - diff, rectStartColor,
+                            Internal_CheckClipAndDrawPolygon(vh, prb + diff, plb + diff, plt - diff, prt - diff, rectStartColor,
                                 rectEndColor, serie.clip, grid);
                             UGL.DrawSector(vh, pct, radius, rectEndColor, areaToColor, 270, 450, 1, isYAxis);
                             UGL.DrawSector(vh, pcb, radius, rectStartColor, areaColor, 90, 270, 1, isYAxis);
                         }
                         else
                         {
-                            CheckClipAndDrawPolygon(vh, prb + diff, plb + diff, plt - diff, prt - diff, areaColor,
+                            Internal_CheckClipAndDrawPolygon(vh, prb + diff, plb + diff, plt - diff, prt - diff, areaColor,
                                 areaToColor, serie.clip, grid);
                             UGL.DrawSector(vh, pct, radius, areaToColor, 270, 450);
                             UGL.DrawSector(vh, pcb, radius, areaColor, 90, 270);
@@ -476,14 +495,14 @@ namespace XCharts
                             var barLen = plb.y - plt.y;
                             var rectStartColor = Color32.Lerp(areaColor, areaToColor, radius / barLen);
                             var rectEndColor = Color32.Lerp(areaColor, areaToColor, (barLen - radius) / barLen);
-                            CheckClipAndDrawPolygon(vh, prb - diff, plb - diff, plt + diff, prt + diff, rectStartColor,
+                            Internal_CheckClipAndDrawPolygon(vh, prb - diff, plb - diff, plt + diff, prt + diff, rectStartColor,
                                 rectEndColor, serie.clip, grid);
                             UGL.DrawSector(vh, pct, radius, rectEndColor, areaToColor, 90, 270, 1, isYAxis);
                             UGL.DrawSector(vh, pcb, radius, rectStartColor, areaColor, 270, 450, 1, isYAxis);
                         }
                         else
                         {
-                            CheckClipAndDrawPolygon(vh, prb - diff, plb - diff, plt + diff, prt + diff, areaColor,
+                            Internal_CheckClipAndDrawPolygon(vh, prb - diff, plb - diff, plt + diff, prt + diff, areaColor,
                                 areaToColor, serie.clip, grid);
                             UGL.DrawSector(vh, pct, radius, areaToColor, 90, 270);
                             UGL.DrawSector(vh, pcb, radius, areaColor, 270, 450);
@@ -512,7 +531,7 @@ namespace XCharts
                     var diff = Vector3.right * radius;
                     var pcl = (plt + plb) / 2 + diff;
                     var pcr = (prt + prb) / 2 - diff;
-                    CheckClipAndDrawPolygon(vh, plb + diff, plt + diff, prt - diff, prb - diff, color, color, serie.clip, grid);
+                    Internal_CheckClipAndDrawPolygon(vh, plb + diff, plt + diff, prt - diff, prb - diff, color, color, serie.clip, grid);
                     UGL.DrawSector(vh, pcl, radius, color, 180, 360);
                     UGL.DrawSector(vh, pcr, radius, color, 0, 180);
                     if (itemStyle.NeedShowBorder())
@@ -536,7 +555,7 @@ namespace XCharts
                 }
                 else
                 {
-                    CheckClipAndDrawPolygon(vh, ref plb, ref plt, ref prt, ref prb, color, color, serie.clip, grid);
+                    Internal_CheckClipAndDrawPolygon(vh, ref plb, ref plt, ref prt, ref prb, color, color, serie.clip, grid);
                 }
             }
             else
@@ -553,7 +572,7 @@ namespace XCharts
                     var diff = Vector3.up * radius;
                     var pct = (plt + prt) / 2 - diff;
                     var pcb = (plb + prb) / 2 + diff;
-                    CheckClipAndDrawPolygon(vh, prb + diff, plb + diff, plt - diff, prt - diff, color, color,
+                    Internal_CheckClipAndDrawPolygon(vh, prb + diff, plb + diff, plt - diff, prt - diff, color, color,
                         serie.clip, grid);
                     UGL.DrawSector(vh, pct, radius, color, 270, 450);
                     UGL.DrawSector(vh, pcb, radius, color, 90, 270);
@@ -578,18 +597,18 @@ namespace XCharts
                 }
                 else
                 {
-                    CheckClipAndDrawPolygon(vh, ref prb, ref plb, ref plt, ref prt, color, color, serie.clip, grid);
+                    Internal_CheckClipAndDrawPolygon(vh, ref prb, ref plb, ref plt, ref prt, color, color, serie.clip, grid);
                 }
             }
         }
 
-        private float GetBarGap()
+        public float Internal_GetBarGap(SerieType type)
         {
-            float gap = 0.3f;
+            float gap = 0f;
             for (int i = 0; i < m_Series.Count; i++)
             {
                 var serie = m_Series.list[i];
-                if (serie.type == SerieType.Bar || serie.type == SerieType.Candlestick)
+                if (serie.type == type)
                 {
                     if (serie.barGap != 0)
                     {
@@ -600,13 +619,13 @@ namespace XCharts
             return gap;
         }
 
-        private float GetSameStackTotalValue(string stack, int dataIndex)
+        public float Internal_GetBarSameStackTotalValue(string stack, int dataIndex, SerieType type)
         {
             if (string.IsNullOrEmpty(stack)) return 0;
             float total = 0;
             foreach (var serie in m_Series.list)
             {
-                if (serie.type == SerieType.Bar)
+                if (serie.type == type)
                 {
                     if (stack.Equals(serie.stack))
                     {
@@ -619,7 +638,7 @@ namespace XCharts
 
 
         private HashSet<string> barStackSet = new HashSet<string>();
-        private float GetBarTotalWidth(float categoryWidth, float gap)
+        public float Internal_GetBarTotalWidth(float categoryWidth, float gap, SerieType type)
         {
             float total = 0;
             float lastGap = 0;
@@ -628,14 +647,14 @@ namespace XCharts
             {
                 var serie = m_Series.list[i];
                 if (!serie.show) continue;
-                if (serie.type == SerieType.Bar || serie.type == SerieType.Candlestick)
+                if (serie.type == type)
                 {
                     if (!string.IsNullOrEmpty(serie.stack))
                     {
                         if (barStackSet.Contains(serie.stack)) continue;
                         barStackSet.Add(serie.stack);
                     }
-                    var width = GetStackBarWidth(categoryWidth, serie);
+                    var width = GetStackBarWidth(categoryWidth, serie, type);
                     if (gap == -1)
                     {
                         if (width > total) total = width;
@@ -652,14 +671,14 @@ namespace XCharts
             return total;
         }
 
-        private float GetStackBarWidth(float categoryWidth, Serie now)
+        private float GetStackBarWidth(float categoryWidth, Serie now, SerieType type)
         {
             if (string.IsNullOrEmpty(now.stack)) return now.GetBarWidth(categoryWidth);
             float barWidth = 0;
             for (int i = 0; i < m_Series.Count; i++)
             {
                 var serie = m_Series.list[i];
-                if ((serie.type == SerieType.Bar && serie.type == SerieType.Candlestick)
+                if ((serie.type == type)
                     && serie.show && now.stack.Equals(serie.stack))
                 {
                     if (serie.barWidth > barWidth) barWidth = serie.barWidth;
@@ -670,14 +689,14 @@ namespace XCharts
         }
 
         private List<string> tempList = new List<string>();
-        private int GetBarIndex(Serie currSerie)
+        public int Internal_GetBarIndex(Serie currSerie, SerieType type)
         {
             tempList.Clear();
             int index = 0;
             for (int i = 0; i < m_Series.Count; i++)
             {
                 var serie = m_Series.GetSerie(i);
-                if (serie.type != SerieType.Bar) continue;
+                if (serie.type != type) continue;
                 if (string.IsNullOrEmpty(serie.stack))
                 {
                     if (serie.index == currSerie.index) return index;

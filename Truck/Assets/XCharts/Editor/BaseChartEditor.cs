@@ -57,6 +57,7 @@ namespace XCharts
         private StringBuilder sb = new StringBuilder();
 
         private bool m_BaseFoldout;
+        private bool m_CustomFoldout;
         protected bool m_ShowAllComponent;
         protected Dictionary<string, bool> m_Flodouts = new Dictionary<string, bool>();
 
@@ -128,6 +129,14 @@ namespace XCharts
             {
                 EditorGUILayout.PropertyField(m_Script);
                 EditorGUILayout.PropertyField(m_ChartName);
+                var fileds = m_Chart.GetCustomChartInspectorShowFileds();
+                if (fileds != null && fileds.Length > 0)
+                {
+                    foreach (var filed in fileds)
+                    {
+                        EditorGUILayout.PropertyField(serializedObject.FindProperty(filed));
+                    }
+                }
             }
             BlockEnd();
 
@@ -200,7 +209,6 @@ namespace XCharts
                     if (m_Flodouts[prop.displayName])
                     {
                         EditorGUI.indentLevel++;
-                        //prop.arraySize = EditorGUILayout.IntField("Size", prop.arraySize);
                         var currRect = EditorGUILayout.GetControlRect(GUILayout.Height(0));
                         currRect.y -= EditorGUIUtility.singleLineHeight;
                         var rect1 = new Rect(currRect.width + k_IconXOffset,

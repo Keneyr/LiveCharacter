@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
+using System.Text;
 
 namespace XCharts
 {
@@ -68,6 +69,18 @@ namespace XCharts
         /// 全局设置组件。
         /// </summary>
         public Settings settings { get { return m_Settings; } }
+        /// <summary>
+        /// dataZoom component.
+        /// 区域缩放组件。
+        /// </summary>
+        public DataZoom dataZoom { get { return m_DataZooms.Count > 0 ? m_DataZooms[0] : null; } }
+        public List<DataZoom> dataZooms { get { return m_DataZooms; } }
+        /// <summary>
+        /// visualMap component.
+        /// 视觉映射组件。
+        /// </summary>
+        public VisualMap visualMap { get { return m_VisualMaps.Count > 0 ? m_VisualMaps[0] : null; } }
+        public List<VisualMap> visualMaps { get { return m_VisualMaps; } }
         /// <summary>
         /// The x of chart. 
         /// 图表的X
@@ -183,9 +196,28 @@ namespace XCharts
         /// <param name="type">the type of serie</param>
         /// <param name="show">whether to show this serie</param>
         /// <returns>the added serie</returns>
-        public virtual Serie AddSerie(SerieType type, string serieName = null, bool show = true)
+        public virtual Serie AddSerie(SerieType type, string serieName = null, bool show = true, bool addToHead = false)
         {
-            return m_Series.AddSerie(type, serieName);
+            return m_Series.AddSerie(type, serieName, show, addToHead);
+        }
+
+        /// <summary>
+        /// Add a serie to serie list.
+        /// 通过字符串类型的serieType添加一个系列到系列列表中。如果serieType不是已定义的SerieType类型，则设置为Custom类型。
+        /// </summary>
+        /// <param name="serieType"></param>
+        /// <param name="serieName"></param>
+        /// <param name="show"></param>
+        /// <returns></returns>
+        public virtual Serie AddSerie(string serieType, string serieName = null, bool show = true, bool addToHead = false)
+        {
+            var type = SerieType.Custom;
+            var list = Enum.GetNames(typeof(SerieType));
+            foreach (var t in list)
+            {
+                if (t.Equals(serieType)) type = (SerieType)Enum.Parse(typeof(SerieType), t);
+            }
+            return AddSerie(type, serieName, show, addToHead);
         }
 
         /// <summary>
@@ -718,6 +750,78 @@ namespace XCharts
         public bool ContainsSerie(SerieType serieType)
         {
             return SeriesHelper.ContainsSerie(m_Series, serieType);
+        }
+
+        public virtual bool AddDefaultCustomSerie(string serieName, int dataCount = 5)
+        {
+            return false;
+        }
+
+        public virtual string[] GetCustomSerieInspectorShowFileds()
+        {
+            return null;
+        }
+        public virtual string[][] GetCustomSerieInspectorCustomFileds()
+        {
+            return null;
+        }
+        public virtual string[] GetCustomChartInspectorShowFileds()
+        {
+            return null;
+        }
+
+        public virtual string GetCustomSerieTypeName()
+        {
+            return null;
+        }
+
+        public int GetLegendRealShowNameIndex(string name)
+        {
+            return m_LegendRealShowName.IndexOf(name);
+        }
+
+        public virtual void InitCustomSerieTooltip(ref StringBuilder stringBuilder, Serie serie, int index)
+        {
+        }
+
+        /// <summary>
+        /// 设置Base Painter的材质球
+        /// </summary>
+        /// <param name="material"></param>
+        public void SetBasePainterMaterial(Material material)
+        {
+            settings.basePainterMaterial = material;
+            if (m_Painter != null)
+            {
+                m_Painter.material = material;
+            }
+        }
+
+        /// <summary>
+        /// 设置Serie Painter的材质球
+        /// </summary>
+        /// <param name="material"></param>
+        public void SetSeriePainterMaterial(Material material)
+        {
+            settings.basePainterMaterial = material;
+            if (m_PainterList != null)
+            {
+                foreach (var painter in m_PainterList)
+                    painter.material = material;
+            }
+        }
+
+        /// <summary>
+        /// 设置Top Painter的材质球
+        /// </summary>
+        /// <param name="material"></param>
+        public void SetTopPainterMaterial(Material material)
+        {
+            settings.topPainterMaterial = material;
+            if (m_PainterTop != null)
+            {
+                m_PainterTop.material = material;
+            }
         }
     }
 }

@@ -1,9 +1,9 @@
-﻿/************************************************/
-/*                                              */
-/*     Copyright (c) 2018 - 2021 monitor1394    */
-/*     https://github.com/monitor1394           */
-/*                                              */
-/************************************************/
+﻿/******************************************/
+/*                                        */
+/*     Copyright (c) 2021 monitor1394     */
+/*     https://github.com/monitor1394     */
+/*                                        */
+/******************************************/
 
 using UnityEngine;
 using UnityEngine.UI;
@@ -128,6 +128,8 @@ namespace XCharts
                 m_PainerDirty = false;
             }
         }
+
+       
 
         private void CheckTextMeshPro()
         {
@@ -272,9 +274,7 @@ namespace XCharts
                 raycastTarget = true;
                 if (canvas == null) return;
                 Vector2 local;
-                var cam = canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : canvas.worldCamera;
-                if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(rectTransform,
-                    Input.mousePosition, cam, out local))
+                if (!ScreenPointToChartPoint(Input.mousePosition, out local))
                 {
                     pointerPos = Vector2.zero;
                 }

@@ -7,6 +7,9 @@
 
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.UI;
+using XUGL;
 
 namespace XCharts
 {
@@ -33,25 +36,6 @@ namespace XCharts
         }
 
         /// <summary>
-        /// 方向。X轴还是Y轴。
-        /// </summary>
-        public enum Direction
-        {
-            /// <summary>
-            /// 默认方向。
-            /// </summary>
-            Default,
-            /// <summary>
-            /// X轴方向。
-            /// </summary>
-            X,
-            /// <summary>
-            /// Y轴方向。
-            /// </summary>
-            Y
-        }
-
-        /// <summary>
         /// 选择模式
         /// </summary>
         public enum SelectedMode
@@ -66,10 +50,42 @@ namespace XCharts
             Single
         }
 
+        [System.Serializable]
+        public class Pieces
+        {
+            [SerializeField] private float m_Min;
+            [SerializeField] private float m_Max;
+            [SerializeField] private string m_Label;
+            [SerializeField] private Color32 m_Color;
+
+            /// <summary>
+            /// 范围最小值
+            /// </summary>
+            public float min { get { return m_Min; } set { m_Min = value; } }
+            /// <summary>
+            /// 范围最大值
+            /// </summary>
+            public float max { get { return m_Max; } set { m_Max = value; } }
+            /// <summary>
+            /// 文字描述
+            /// </summary>
+            public string label { get { return m_Label; } set { m_Label = value; } }
+            /// <summary>
+            /// 颜色
+            /// </summary>
+            public Color32 color { get { return m_Color; } set { m_Color = value; } }
+
+            public bool Contains(float value, float minMaxRange)
+            {
+                var cmin = Mathf.Abs(m_Min) < 1 ? minMaxRange * m_Min : m_Min;
+                var cmax = Mathf.Abs(m_Max) < 1 ? minMaxRange * m_Max : m_Max;
+                return value >= cmin && value < cmax;
+            }
+        }
+
         [SerializeField] private bool m_Enable = false;
         [SerializeField] private bool m_Show = true;
         [SerializeField] private Type m_Type = Type.Continuous;
-        [SerializeField] private Direction m_Direction = Direction.Default;
         [SerializeField] private SelectedMode m_SelectedMode = SelectedMode.Multiple;
         [SerializeField] private float m_Min = 0;
         [SerializeField] private float m_Max = 100f;
@@ -82,6 +98,7 @@ namespace XCharts
         [SerializeField] private bool m_Realtime = true;
         [SerializeField] private float m_ItemWidth = 20f;
         [SerializeField] private float m_ItemHeight = 140f;
+        [SerializeField] private float m_ItemGap = 10f;
         [SerializeField] private float m_BorderWidth = 0;
         [SerializeField] private int m_Dimension = -1;
         [SerializeField] private bool m_HoverLink = true;
@@ -89,7 +106,8 @@ namespace XCharts
         [SerializeField] private Orient m_Orient = Orient.Horizonal;
         [SerializeField] private Location m_Location = Location.defaultLeft;
         [SerializeField] private List<Color32> m_InRange = new List<Color32>();
-        [SerializeField] private List<Color32> m_OutOfRange = new List<Color32>();
+        [SerializeField] private List<Color32> m_OutOfRange = new List<Color32>() { Color.gray };
+        [SerializeField] private List<Pieces> m_Pieces = new List<Pieces>();
 
         /// <summary>
         /// Whether enable visualMap component.
@@ -123,14 +141,6 @@ namespace XCharts
         {
             get { return m_Type; }
             set { if (PropertyUtil.SetStruct(ref m_Type, value)) SetVerticesDirty(); }
-        }
-        /// <summary>
-        /// 映射方向。
-        /// </summary>
-        public Direction direction
-        {
-            get { return m_Direction; }
-            set { if (PropertyUtil.SetStruct(ref m_Direction, value)) SetVerticesDirty(); }
         }
         /// <summary>
         /// the selected mode for Piecewise visualMap.
@@ -230,6 +240,14 @@ namespace XCharts
             set { if (PropertyUtil.SetStruct(ref m_ItemHeight, value)) SetVerticesDirty(); }
         }
         /// <summary>
+        /// 每个图元之间的间隔距离。
+        /// </summary>
+        public float itemGap
+        {
+            get { return m_ItemGap; }
+            set { if (PropertyUtil.SetStruct(ref m_ItemGap, value)) SetVerticesDirty(); }
+        }
+        /// <summary>
         /// Border line width.
         /// 
         /// 边框线宽，单位px。
@@ -311,15 +329,23 @@ namespace XCharts
             get { return m_OutOfRange; }
             set { if (value != null) { m_OutOfRange = value; SetVerticesDirty(); } }
         }
+        /// <summary>
+        /// 分段式每一段的相关配置。
+        /// </summary>
+        public List<Pieces> pieces
+        {
+            get { return m_Pieces; }
+            set { if (value != null) { m_Pieces = value; SetVerticesDirty(); } }
+        }
 
         public override bool vertsDirty { get { return m_VertsDirty || location.anyDirty; } }
-        internal override void ClearVerticesDirty()
+        public override void ClearVerticesDirty()
         {
             base.ClearVerticesDirty();
             location.ClearVerticesDirty();
         }
 
-        internal override void ClearComponentDirty()
+        public override void ClearComponentDirty()
         {
             base.ClearComponentDirty();
             location.ClearComponentDirty();
@@ -329,13 +355,13 @@ namespace XCharts
         /// 鼠标悬停选中的index
         /// </summary>
         /// <value></value>
-        public int runtimeSelectedIndex { get; internal set; }
-        public float runtimeSelectedValue { get; internal set; }
+        public int runtimeSelectedIndex { get; set; }
+        public float runtimeSelectedValue { get; set; }
         /// <summary>
         /// the current pointer position.
         /// 当前鼠标位置。
         /// </summary>
-        public Vector2 runtimePointerPos { get; internal set; }
+        public Vector2 runtimePointerPos { get; set; }
         public bool runtimeIsVertical { get { return orient == Orient.Vertical; } }
         public float rangeMin
         {
@@ -374,6 +400,8 @@ namespace XCharts
 
         public float runtimeRangeMinHeight { get { return (rangeMin - min) / (max - min) * itemHeight; } }
         public float runtimeRangeMaxHeight { get { return (rangeMax - min) / (max - min) * itemHeight; } }
+        public bool runtimeMinDrag { get; internal set; }
+        public bool runtimeMaxDrag { get; internal set; }
 
         private List<Color32> m_RtInRange = new List<Color32>();
         public List<Color32> runtimeInRange
@@ -423,6 +451,32 @@ namespace XCharts
         }
 
         public Color32 GetColor(float value)
+        {
+            switch (type)
+            {
+                case Type.Continuous:
+                    return GetContinuousColor(value);
+                case Type.Piecewise:
+                    return GetPiecesColor(value);
+                default:
+                    return ColorUtil.clearColor32;
+            }
+        }
+
+        private Color32 GetPiecesColor(float value)
+        {
+            foreach (var piece in m_Pieces)
+            {
+                if (piece.Contains(value, max - min))
+                {
+                    return piece.color;
+                }
+            }
+            if (m_OutOfRange.Count > 0) return m_OutOfRange[0];
+            else return ChartConst.clearColor32;
+        }
+
+        private Color32 GetContinuousColor(float value)
         {
             if (value < m_Min || value > m_Max)
             {
@@ -573,6 +627,373 @@ namespace XCharts
                 var cpos = new Vector3(pos1.x + runtimeRangeMaxHeight + radius, pos1.y + itemWidth / 2 + radius);
                 return local.x >= cpos.x - radius && local.x <= cpos.x + radius &&
                 local.y >= cpos.y - radius && local.y <= cpos.y + radius;
+            }
+        }
+    }
+
+    internal class VisualMapHandler : IComponentHandler
+    {
+        public BaseChart chart;
+
+        public VisualMapHandler(BaseChart chart)
+        {
+            this.chart = chart;
+        }
+
+        public void Init() { }
+        public void OnBeginDrag(PointerEventData eventData)
+        {
+            foreach (var visualMap in chart.visualMaps)
+            {
+                OnDragVisualMapStart(visualMap);
+            }
+        }
+        public void OnDrag(PointerEventData eventData)
+        {
+            foreach (var visualMap in chart.visualMaps)
+            {
+                OnDragVisualMap(visualMap);
+            }
+        }
+
+        public void OnEndDrag(PointerEventData eventData)
+        {
+            foreach (var visualMap in chart.visualMaps)
+            {
+                OnDragVisualMapEnd(visualMap);
+            }
+        }
+        public void OnPointerDown(PointerEventData eventData) { }
+        public void OnScroll(PointerEventData eventData) { }
+
+        public void Update()
+        {
+            foreach (var visualMap in chart.visualMaps)
+            {
+                CheckVisualMap(visualMap);
+            }
+        }
+
+        public void DrawBase(VertexHelper vh)
+        {
+            foreach (var visualMap in chart.visualMaps)
+            {
+                if (!visualMap.enable || !visualMap.show) continue;
+                switch (visualMap.type)
+                {
+                    case VisualMap.Type.Continuous:
+                        DrawContinuousVisualMap(vh, visualMap);
+                        break;
+                    case VisualMap.Type.Piecewise:
+                        //DrawPiecewiseVisualMap(vh, visualMap);
+                        break;
+                }
+            }
+        }
+
+        public void DrawTop(VertexHelper vh)
+        {
+        }
+
+        private void CheckVisualMap(VisualMap visualMap)
+        {
+            if (visualMap == null || !visualMap.enable || !visualMap.show) return;
+            Vector2 local;
+            if (chart.canvas == null) return;
+
+            if (!chart.ScreenPointToChartPoint(Input.mousePosition, out local))
+            {
+                if (visualMap.runtimeSelectedIndex >= 0)
+                {
+                    visualMap.runtimeSelectedIndex = -1;
+                    chart.RefreshChart();
+                }
+                return;
+            }
+            if (local.x < chart.chartX || local.x > chart.chartX + chart.chartWidth ||
+                local.y < chart.chartY || local.y > chart.chartY + chart.chartHeight ||
+                !visualMap.IsInRangeRect(local, chart.chartRect))
+            {
+                if (visualMap.runtimeSelectedIndex >= 0)
+                {
+                    visualMap.runtimeSelectedIndex = -1;
+                    chart.RefreshChart();
+                }
+                return;
+            }
+            var pos1 = Vector3.zero;
+            var pos2 = Vector3.zero;
+            var halfHig = visualMap.itemHeight / 2;
+            var centerPos = chart.chartPosition + visualMap.location.GetPosition(chart.chartWidth, chart.chartHeight);
+            var selectedIndex = -1;
+            var value = 0f;
+            switch (visualMap.orient)
+            {
+                case Orient.Horizonal:
+                    pos1 = centerPos + Vector3.left * halfHig;
+                    pos2 = centerPos + Vector3.right * halfHig;
+                    value = visualMap.min + (local.x - pos1.x) / (pos2.x - pos1.x) * (visualMap.max - visualMap.min);
+                    selectedIndex = visualMap.GetIndex(value);
+                    break;
+                case Orient.Vertical:
+                    pos1 = centerPos + Vector3.down * halfHig;
+                    pos2 = centerPos + Vector3.up * halfHig;
+                    value = visualMap.min + (local.y - pos1.y) / (pos2.y - pos1.y) * (visualMap.max - visualMap.min);
+                    selectedIndex = visualMap.GetIndex(value);
+                    break;
+            }
+            visualMap.runtimeSelectedValue = value;
+            visualMap.runtimeSelectedIndex = selectedIndex;
+            chart.RefreshChart();
+        }
+
+        private void DrawContinuousVisualMap(VertexHelper vh, VisualMap visualMap)
+        {
+            var centerPos = chart.chartPosition + visualMap.location.GetPosition(chart.chartWidth, chart.chartHeight);
+            var pos1 = Vector3.zero;
+            var pos2 = Vector3.zero;
+            var dir = Vector3.zero;
+            var halfWid = visualMap.itemWidth / 2;
+            var halfHig = visualMap.itemHeight / 2;
+            var xRadius = 0f;
+            var yRadius = 0f;
+            var splitNum = visualMap.runtimeInRange.Count;
+            var splitWid = visualMap.itemHeight / (splitNum - 1);
+            var isVertical = false;
+            var colors = visualMap.runtimeInRange;
+            var triangeLen = chart.theme.visualMap.triangeLen;
+            switch (visualMap.orient)
+            {
+                case Orient.Horizonal:
+                    pos1 = centerPos + Vector3.left * halfHig;
+                    pos2 = centerPos + Vector3.right * halfHig;
+                    dir = Vector3.right;
+                    xRadius = splitWid / 2;
+                    yRadius = halfWid;
+                    isVertical = false;
+                    if (visualMap.calculable)
+                    {
+                        var p0 = pos1 + Vector3.right * visualMap.runtimeRangeMinHeight;
+                        var p1 = p0 + Vector3.up * halfWid;
+                        var p2 = p0 + Vector3.up * (halfWid + triangeLen);
+                        var p3 = p2 + Vector3.left * triangeLen;
+                        var color = visualMap.GetColor(visualMap.rangeMin);
+                        UGL.DrawTriangle(vh, p1, p2, p3, color);
+                        p0 = pos1 + Vector3.right * visualMap.runtimeRangeMaxHeight;
+                        p1 = p0 + Vector3.up * halfWid;
+                        p2 = p0 + Vector3.up * (halfWid + triangeLen);
+                        p3 = p2 + Vector3.right * triangeLen;
+                        color = visualMap.GetColor(visualMap.rangeMax);
+                        UGL.DrawTriangle(vh, p1, p2, p3, color);
+                    }
+                    break;
+                case Orient.Vertical:
+                    pos1 = centerPos + Vector3.down * halfHig;
+                    pos2 = centerPos + Vector3.up * halfHig;
+                    dir = Vector3.up;
+                    xRadius = halfWid;
+                    yRadius = splitWid / 2;
+                    isVertical = true;
+                    if (visualMap.calculable)
+                    {
+                        var p0 = pos1 + Vector3.up * visualMap.runtimeRangeMinHeight;
+                        var p1 = p0 + Vector3.right * halfWid;
+                        var p2 = p0 + Vector3.right * (halfWid + triangeLen);
+                        var p3 = p2 + Vector3.down * triangeLen;
+                        var color = visualMap.GetColor(visualMap.rangeMin);
+                        UGL.DrawTriangle(vh, p1, p2, p3, color);
+                        p0 = pos1 + Vector3.up * visualMap.runtimeRangeMaxHeight;
+                        p1 = p0 + Vector3.right * halfWid;
+                        p2 = p0 + Vector3.right * (halfWid + triangeLen);
+                        p3 = p2 + Vector3.up * triangeLen;
+                        color = visualMap.GetColor(visualMap.rangeMax);
+                        UGL.DrawTriangle(vh, p1, p2, p3, color);
+                    }
+                    break;
+            }
+            if (visualMap.calculable && (visualMap.rangeMin > visualMap.min
+                || visualMap.rangeMax < visualMap.max))
+            {
+                var rangeMin = visualMap.rangeMin;
+                var rangeMax = visualMap.rangeMax;
+                var diff = (visualMap.max - visualMap.min) / (splitNum - 1);
+                for (int i = 1; i < splitNum; i++)
+                {
+                    var splitMin = visualMap.min + (i - 1) * diff;
+                    var splitMax = splitMin + diff;
+                    if (rangeMin > splitMax || rangeMax < splitMin)
+                    {
+                        continue;
+                    }
+                    else if (rangeMin <= splitMin && rangeMax >= splitMax)
+                    {
+                        var splitPos = pos1 + dir * (i - 1 + 0.5f) * splitWid;
+                        var startColor = colors[i - 1];
+                        var toColor = visualMap.IsPiecewise() ? startColor : colors[i];
+                        UGL.DrawRectangle(vh, splitPos, xRadius, yRadius, startColor, toColor, isVertical);
+                    }
+                    else if (rangeMin > splitMin && rangeMax >= splitMax)
+                    {
+                        var p0 = pos1 + dir * visualMap.runtimeRangeMinHeight;
+                        var splitMaxPos = pos1 + dir * i * splitWid;
+                        var splitPos = p0 + (splitMaxPos - p0) / 2;
+                        var startColor = visualMap.GetColor(visualMap.rangeMin);
+                        var toColor = visualMap.IsPiecewise() ? startColor : colors[i];
+                        var yRadius1 = Vector3.Distance(p0, splitMaxPos) / 2;
+                        if (visualMap.orient == Orient.Vertical)
+                            UGL.DrawRectangle(vh, splitPos, xRadius, yRadius1, startColor, toColor, isVertical);
+                        else
+                            UGL.DrawRectangle(vh, splitPos, yRadius1, yRadius, startColor, toColor, isVertical);
+                    }
+                    else if (rangeMax < splitMax && rangeMin <= splitMin)
+                    {
+                        var p0 = pos1 + dir * visualMap.runtimeRangeMaxHeight;
+                        var splitMinPos = pos1 + dir * (i - 1) * splitWid;
+                        var splitPos = splitMinPos + (p0 - splitMinPos) / 2;
+                        var startColor = colors[i - 1];
+                        var toColor = visualMap.IsPiecewise() ? startColor : visualMap.GetColor(visualMap.rangeMax);
+                        var yRadius1 = Vector3.Distance(p0, splitMinPos) / 2;
+                        if (visualMap.orient == Orient.Vertical)
+                            UGL.DrawRectangle(vh, splitPos, xRadius, yRadius1, startColor, toColor, isVertical);
+                        else
+                            UGL.DrawRectangle(vh, splitPos, yRadius1, yRadius, startColor, toColor, isVertical);
+                    }
+                    else
+                    {
+                        var p0 = pos1 + dir * visualMap.runtimeRangeMinHeight;
+                        var p1 = pos1 + dir * visualMap.runtimeRangeMaxHeight;
+                        var splitPos = (p0 + p1) / 2;
+                        var startColor = visualMap.GetColor(visualMap.rangeMin);
+                        var toColor = visualMap.GetColor(visualMap.rangeMax);
+                        var yRadius1 = Vector3.Distance(p0, p1) / 2;
+                        if (visualMap.orient == Orient.Vertical)
+                            UGL.DrawRectangle(vh, splitPos, xRadius, yRadius1, startColor, toColor, isVertical);
+                        else
+                            UGL.DrawRectangle(vh, splitPos, yRadius1, yRadius, startColor, toColor, isVertical);
+                    }
+                }
+            }
+            else
+            {
+                for (int i = 1; i < splitNum; i++)
+                {
+                    var splitPos = pos1 + dir * (i - 1 + 0.5f) * splitWid;
+                    var startColor = colors[i - 1];
+                    var toColor = visualMap.IsPiecewise() ? startColor : colors[i];
+                    UGL.DrawRectangle(vh, splitPos, xRadius, yRadius, startColor, toColor, isVertical);
+                }
+            }
+
+            if (visualMap.rangeMin > visualMap.min)
+            {
+                var p0 = pos1 + dir * visualMap.runtimeRangeMinHeight;
+                UGL.DrawRectangle(vh, pos1, p0, visualMap.itemWidth / 2, chart.theme.visualMap.backgroundColor);
+            }
+            if (visualMap.rangeMax < visualMap.max)
+            {
+                var p1 = pos1 + dir * visualMap.runtimeRangeMaxHeight;
+                UGL.DrawRectangle(vh, p1, pos2, visualMap.itemWidth / 2, chart.theme.visualMap.backgroundColor);
+            }
+
+            if (visualMap.hoverLink)
+            {
+                if (visualMap.runtimeSelectedIndex >= 0)
+                {
+                    var p0 = pos1 + dir * visualMap.runtimeRangeMinHeight;
+                    var p1 = pos1 + dir * visualMap.runtimeRangeMaxHeight;
+                    var pointerPos = chart.pointerPos;
+                    if (visualMap.orient == Orient.Vertical)
+                    {
+                        var p2 = new Vector3(centerPos.x + halfWid, Mathf.Clamp(pointerPos.y + (triangeLen / 2), p0.y, p1.y));
+                        var p3 = new Vector3(centerPos.x + halfWid, Mathf.Clamp(pointerPos.y - (triangeLen / 2), p0.y, p1.y));
+                        var p4 = new Vector3(centerPos.x + halfWid + triangeLen / 2, pointerPos.y);
+                        UGL.DrawTriangle(vh, p2, p3, p4, colors[visualMap.runtimeSelectedIndex]);
+                    }
+                    else
+                    {
+                        var p2 = new Vector3(Mathf.Clamp(pointerPos.x + (triangeLen / 2), p0.x, p1.x), centerPos.y + halfWid);
+                        var p3 = new Vector3(Mathf.Clamp(pointerPos.x - (triangeLen / 2), p0.x, p1.x), centerPos.y + halfWid);
+                        var p4 = new Vector3(pointerPos.x, centerPos.y + halfWid + triangeLen / 2);
+                        UGL.DrawTriangle(vh, p2, p3, p4, colors[visualMap.runtimeSelectedIndex]);
+                    }
+                }
+            }
+        }
+        private void DrawPiecewiseVisualMap(VertexHelper vh, VisualMap visualMap)
+        {
+            var centerPos = chart.chartPosition + visualMap.location.GetPosition(chart.chartWidth, chart.chartHeight);
+            var pos1 = Vector3.zero;
+            var pos2 = Vector3.zero;
+            var dir = Vector3.zero;
+            var halfWid = visualMap.itemWidth / 2;
+            var halfHig = visualMap.itemHeight / 2;
+            var splitNum = visualMap.runtimeInRange.Count;
+            var splitWid = visualMap.itemHeight / (splitNum - 1);
+            var colors = visualMap.runtimeInRange;
+            switch (visualMap.orient)
+            {
+                case Orient.Horizonal:
+                    for (int i = 0; i < visualMap.pieces.Count; i++)
+                    {
+                        var piece = visualMap.pieces[i];
+
+                    }
+                    break;
+                case Orient.Vertical:
+                    var each = visualMap.itemHeight + visualMap.itemGap;
+                    for (int i = 0; i < visualMap.pieces.Count; i++)
+                    {
+                        var piece = visualMap.pieces[i];
+                        var pos = new Vector3(centerPos.x, centerPos.y - each * i);
+                        UGL.DrawRectangle(vh, pos, halfWid, halfHig, piece.color);
+                    }
+                    break;
+            }
+        }
+
+        protected void OnDragVisualMapStart(VisualMap visualMap)
+        {
+            if (!visualMap.enable || !visualMap.show || !visualMap.calculable) return;
+            var inMinRect = visualMap.IsInRangeMinRect(chart.pointerPos, chart.chartRect, chart.theme.visualMap.triangeLen);
+            var inMaxRect = visualMap.IsInRangeMaxRect(chart.pointerPos, chart.chartRect, chart.theme.visualMap.triangeLen);
+            if (inMinRect || inMaxRect)
+            {
+                if (inMinRect)
+                {
+                    visualMap.runtimeMinDrag = true;
+                }
+                else
+                {
+                    visualMap.runtimeMaxDrag = true;
+                }
+            }
+        }
+
+        protected void OnDragVisualMap(VisualMap visualMap)
+        {
+            if (!visualMap.enable || !visualMap.show || !visualMap.calculable) return;
+            if (!visualMap.runtimeMinDrag && !visualMap.runtimeMaxDrag) return;
+
+            var value = visualMap.GetValue(chart.pointerPos, chart.chartRect);
+            if (visualMap.runtimeMinDrag)
+            {
+                visualMap.rangeMin = value;
+            }
+            else
+            {
+                visualMap.rangeMax = value;
+            }
+            chart.RefreshChart();
+        }
+
+        protected void OnDragVisualMapEnd(VisualMap visualMap)
+        {
+            if (!visualMap.enable || !visualMap.show || !visualMap.calculable) return;
+            if (visualMap.runtimeMinDrag || visualMap.runtimeMaxDrag)
+            {
+                chart.RefreshChart();
+                visualMap.runtimeMinDrag = false;
+                visualMap.runtimeMaxDrag = false;
             }
         }
     }

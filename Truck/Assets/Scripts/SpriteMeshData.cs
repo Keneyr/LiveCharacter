@@ -457,6 +457,9 @@ public class SpriteMeshData : ScriptableObject
     [SerializeField]
     Mesh m_SharedMesh = new Mesh(); //用于和Unity自带的骨骼动画的一些参数 及 渲染组件 交涉
 
+    [SerializeField]
+    Sprite m_Sprite;
+
     public Vector2[] vertices
     {
         get
@@ -547,7 +550,17 @@ public class SpriteMeshData : ScriptableObject
             m_SharedMesh = value;
         }
     }
-
+    public Sprite sprite
+    {
+        get
+        {
+            return m_Sprite;
+        }
+        set
+        {
+            m_Sprite = value;
+        }
+    }
     public Vector2 GetVertex(Node node) {
         if(node.index>=0&&node.index<vertices.Length)
             return vertices[node.index];

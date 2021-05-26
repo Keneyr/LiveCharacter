@@ -14,6 +14,9 @@ public class SpriteMeshGameObject : MonoBehaviour
     SpriteMeshData m_SpriteMeshData;
 
     [SerializeField]
+    Material[] m_Materials;
+
+    [SerializeField]
     int m_SortingOrder = 0;
 
     [SerializeField]
@@ -23,8 +26,18 @@ public class SpriteMeshGameObject : MonoBehaviour
     
     SkinnedMeshRenderer mCachedSkinnedRenderer; //要添加的组件
 
-    [SerializeField]
-    Material[] m_Materials;
+   
+    Texture2D spriteTexture
+    {
+        get
+        {
+            if(spriteMeshData && spriteMeshData.sprite)
+            {
+                return spriteMeshData.sprite.texture;
+            }
+            return null;
+        }
+    }
 
     public SpriteMeshData spriteMeshData
     {
@@ -113,11 +126,7 @@ public class SpriteMeshGameObject : MonoBehaviour
         }
     }
 
-    //private void LateUpdate()
-    //{
-    //    spriteMeshData.sharedMesh.vertices = spriteMeshData.vertices;
-    //    spriteMesh
-    //}
+ 
 
     public Material sharedMaterial
     {
@@ -134,23 +143,168 @@ public class SpriteMeshGameObject : MonoBehaviour
             m_Materials = new Material[] { value };
         }
     }
-
-    void OnWillRenderObject()
+    public Material[] sharedMaterials
     {
+        get
+        {
+            return m_Materials;
+        }
+        set
+        {
+            m_Materials = value;
+        }
+    }
+    MaterialPropertyBlock m_MaterialPropertyBlock;
+    MaterialPropertyBlock materialPropertyBlock
+    {
+        get
+        {
+            if (m_MaterialPropertyBlock == null)
+            {
+                m_MaterialPropertyBlock = new MaterialPropertyBlock();
+            }
+
+            return m_MaterialPropertyBlock;
+        }
+    }
+
+    Mesh m_InitialMesh = null;
+    Mesh m_CurrentMesh = null;
+    public Mesh sharedMesh
+    {
+        get
+        {
+            if(m_InitialMesh)
+            {
+                return m_InitialMesh;
+            }
+            return null;
+        }
+    }
+    public Mesh mesh
+    {
+        get
+        {
+            if(m_CurrentMesh)
+            {
+                return GameObject.Instantiate(m_CurrentMesh);
+            }
+            return null;
+        }
+    }
+    private void OnDestroy()
+    {
+        Destroy(m_CurrentMesh);
+    }
+
+    private void Awake()
+    {
+        //UpdateCurrentMesh();
+    }
+    
+    void UpdateCurrentMesh()
+    {
+        UpdateInitialMesh();
+        if (m_InitialMesh)
+        {
+            m_InitialMesh.MarkDynamic();
+            m_InitialMesh.UploadMeshData(true);
+            m_InitialMesh.hideFlags = HideFlags.DontSave;
+
+            if (!m_CurrentMesh)
+            {
+                m_CurrentMesh = new Mesh();
+                m_CurrentMesh.hideFlags = HideFlags.DontSave;
+                m_CurrentMesh.MarkDynamic(); //说明这个mesh是经常update的
+            }
+            m_CurrentMesh.Clear();
+            m_CurrentMesh.UploadMeshData(true);
+            m_CurrentMesh = spriteMeshData.sharedMesh;
+            //m_CurrentMesh.name = m_InitialMesh.name;
+            //m_CurrentMesh.vertices = m_InitialMesh.vertices;
+            //m_CurrentMesh.uv = m_InitialMesh.uv;
+            //m_CurrentMesh.normals = m_InitialMesh.normals;
+            //m_CurrentMesh.tangents = m_InitialMesh.tangents;
+            //m_CurrentMesh.boneWeights = m_InitialMesh.boneWeights;
+            //m_CurrentMesh.bindposes = m_InitialMesh.bindposes;
+            //m_CurrentMesh.bounds = m_InitialMesh.bounds;
+            //m_CurrentMesh.colors = m_InitialMesh.colors;
+
+            //for (int i = 0; i < m_InitialMesh.subMeshCount; ++i)
+            //{
+            //    m_CurrentMesh.SetTriangles(m_CurrentMesh.GetTriangles(i), i);
+            //}
+            m_CurrentMesh.hideFlags = HideFlags.DontSave;
+        }
+        else
+        {
+            m_InitialMesh = null;
+            if(m_CurrentMesh)
+            {
+                m_CurrentMesh.Clear();
+            }
+        }
+        if(m_CurrentMesh)
+        {
+            if(spriteMeshData && spriteMeshData.sprite && spriteMeshData.sprite.packed)
+            {
+                SetSpriteUVs(m_CurrentMesh,spriteMeshData.sprite);
+            }
+            m_CurrentMesh.UploadMeshData(false);
+            m_InitialMesh.UploadMeshData(false);
+        }
         UpdateRenderers();
     }
+
+    void SetSpriteUVs(Mesh mesh,Sprite sprite)
+    {
+        Vector2[] spriteUVs = sprite.uv;
+        if(mesh.vertexCount == spriteUVs.Length)
+        {
+            mesh.uv = sprite.uv;
+        }
+    }
+    void UpdateInitialMesh()
+    {
+        m_InitialMesh = null;
+        if(spriteMeshData && spriteMeshData.sharedMesh)
+        {
+            m_InitialMesh = spriteMeshData.sharedMesh;
+        }
+    }
+    
 
     //更新网格
     void UpdateRenderers()
     {
         Mesh l_mesh = null;
 
+        if(m_InitialMesh)
+        {
+            l_mesh = m_CurrentMesh;
+
+        }
         if (cachedSkinnedRenderer)
         {
-            cachedSkinnedRenderer.sharedMesh = spriteMeshData.sharedMesh;
+            cachedSkinnedRenderer.sharedMesh = l_mesh;
+        }
+    }
+
+    void LateUpdate()
+    {
+        if(!spriteMeshData || (spriteMeshData && spriteMeshData.sharedMesh != m_InitialMesh))
+        {
+            UpdateCurrentMesh();
+        }
+    }
+    void OnWillRenderObject()
+    {
+        UpdateRenderers();
+        if (spriteTexture)
+        {
+            materialPropertyBlock.SetTexture("_MainTex", spriteTexture);
         }
 
-       
     }
 
 

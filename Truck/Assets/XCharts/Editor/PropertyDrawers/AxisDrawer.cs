@@ -68,6 +68,8 @@ namespace XCharts
                 PropertyField(prop, "m_SplitNumber");
                 if (type == Axis.AxisType.Category)
                 {
+                    PropertyField(prop, "m_InsertDataToHead");
+                    PropertyField(prop, "m_MaxCache");
                     PropertyField(prop, "m_BoundaryGap");
                 }
                 else
@@ -81,7 +83,8 @@ namespace XCharts
                 PropertyField(prop, "m_AxisLabel");
                 PropertyField(prop, "m_SplitLine");
                 PropertyField(prop, "m_SplitArea");
-
+                PropertyField(prop, "m_IconStyle");
+                PropertyListField(prop, "m_Icons", true);
                 if (type == Axis.AxisType.Category)
                 {
                     PropertyListField(prop, "m_Data", true);
@@ -131,10 +134,12 @@ namespace XCharts
             if (MakeFoldout(prop, "m_Show"))
             {
                 ++EditorGUI.indentLevel;
-                PropertyField(prop, "m_Formatter");
                 PropertyField(prop, "m_Inside");
                 PropertyField(prop, "m_Interval");
                 PropertyField(prop, "m_Margin");
+                PropertyField(prop, "m_Width");
+                PropertyField(prop, "m_Height");
+                PropertyField(prop, "m_Formatter");
                 PropertyField(prop, "m_NumericFormatter");
                 PropertyField(prop, "m_ShowAsPositiveNumber");
                 PropertyField(prop, "m_OnZero");

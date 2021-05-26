@@ -67,7 +67,7 @@ namespace XCharts
             m_LabelDirty = true;
         }
 
-        internal override void ClearVerticesDirty()
+        public override void ClearVerticesDirty()
         {
             base.ClearVerticesDirty();
             foreach (var serie in m_Series)
@@ -214,6 +214,15 @@ namespace XCharts
             return false;
         }
 
+        public bool Contains(SerieType type)
+        {
+            foreach (var serie in m_Series)
+            {
+                if (serie.type == type) return true;
+            }
+            return false;
+        }
+
         /// <summary>
         /// Remove serie from series.
         /// 移除指定名字的系列。
@@ -245,7 +254,7 @@ namespace XCharts
         /// <param name="type"></param>
         /// <param name="show"></param>
         /// <returns></returns>
-        public Serie AddSerie(SerieType type, string serieName, bool show = true)
+        public Serie AddSerie(SerieType type, string serieName, bool show = true, bool addToHead = false)
         {
             var serie = new Serie();
             serie.type = type;
@@ -268,7 +277,12 @@ namespace XCharts
                 serie.symbol.show = false;
             }
             serie.animation.Restart();
-            m_Series.Add(serie);
+            if (addToHead) m_Series.Insert(0, serie);
+            else m_Series.Add(serie);
+            for (int i = 0; i < m_Series.Count; i++)
+            {
+                m_Series[i].index = i;
+            }
             SetVerticesDirty();
             return serie;
         }
@@ -327,7 +341,7 @@ namespace XCharts
             return null;
         }
 
-         public SerieData AddData(string serieName, float open, float close, float lowest, float heighest, string dataName = null)
+        public SerieData AddData(string serieName, float open, float close, float lowest, float heighest, string dataName = null)
         {
             var serie = GetSerie(serieName);
             if (serie != null)
