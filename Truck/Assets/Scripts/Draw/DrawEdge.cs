@@ -13,10 +13,11 @@ public class DrawEdge : MonoBehaviour
     static Camera contourCamera;
     static float lineWidth = 0.05f;
     static float expandScale = 1.1f;
-
+    
     static Material wireMaterial; //方便GL绘图的材质
     RenderTexture renderTargetTexture;
     static RectTransform rt;
+    static float layer = 0;
     public static void ResetPastCharacterInfo()
     {
         m_TexVertices.Clear();
@@ -28,6 +29,7 @@ public class DrawEdge : MonoBehaviour
     {
         CreateLineMaterial();
         contourCamera = GameObject.Find("ContourCamera").GetComponent<Camera>();
+        Extra.InitCamera(contourCamera, layer);
         renderTargetTexture = new RenderTexture(256,256,24);
         contourCamera.targetTexture = renderTargetTexture;
         GetComponent<RawImage>().texture = renderTargetTexture;
@@ -74,8 +76,8 @@ public class DrawEdge : MonoBehaviour
         for (int i=0;i<edges.Count;i++)
         {
             Edge edge = edges[i];
-            Vector2 position1 = m_TexVertices[edge.node1.index];
-            Vector2 position2 = m_TexVertices[edge.node2.index];
+            Vector3 position1 = new Vector3(m_TexVertices[edge.node1.index].x, m_TexVertices[edge.node1.index].y,layer) ;
+            Vector3 position2 = new Vector3(m_TexVertices[edge.node2.index].x, m_TexVertices[edge.node2.index].y, layer);
             Extra.DrawLine(position1, position2, Vector3.forward, lineWidth, wireMaterial);
         }
         
@@ -103,7 +105,7 @@ public class DrawEdge : MonoBehaviour
         nodes = m_TexVertices.ConvertAll(v => Node.Create(m_TexVertices.IndexOf(v)));
         edges = spriteMeshData.edges.ToList().ConvertAll(e => Edge.Create(nodes[e.index1], nodes[e.index2]));
         //set camera
-        Extra.SetInnerCamera(contourCamera, rect, rt, expandScale);
+        Extra.SetInnerCamera(contourCamera,layer, rect, rt, expandScale);
         
         lineWidth = rect.height*0.01f;
     }

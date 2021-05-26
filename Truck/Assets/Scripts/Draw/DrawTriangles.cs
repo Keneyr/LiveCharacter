@@ -9,17 +9,22 @@ public class DrawTriangles : MonoBehaviour
     static List<int> indices = new List<int>();
     static List<Vector2> points = new List<Vector2>();
     static Camera triangulateCamera;
-    static float lineWidth = 0.05f;
+    static float lineWidth = 0.01f;
+    static float outlineWidth = 0.03f;
+    static float pointRadius = 0.04f;
     static float expandScale = 1.1f;
     
     static Material meshMaterial;
+    static Material outlineMaterial;
     RenderTexture renderTargetTexture;
+    static float layer = 1;
 
     static RectTransform rt;
     private void Start()
     {
         CreateLineMaterial();
         triangulateCamera = GameObject.Find("TriangulateCamera").GetComponent<Camera>();
+        Extra.InitCamera(triangulateCamera,layer);
         renderTargetTexture = new RenderTexture(256,256,24);
         triangulateCamera.targetTexture = renderTargetTexture;
         GetComponent<RawImage>().texture = renderTargetTexture;
@@ -59,6 +64,28 @@ public class DrawTriangles : MonoBehaviour
             // Turn off depth writes
             meshMaterial.SetInt("_ZWrite", 0);
         }
+        if (!outlineMaterial)
+        {
+            // Unity has a built-in shader that is useful for drawing
+            // simple colored things.
+            Shader shader = Shader.Find("Hidden/Internal-Colored");
+            outlineMaterial = new Material(shader);
+            outlineMaterial.hideFlags = HideFlags.HideAndDontSave;
+
+            //cyan color
+            outlineMaterial.SetColor("_Color", Color.cyan);
+
+            // Turn on alpha blending
+            outlineMaterial.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+
+            outlineMaterial.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+
+            // Turn backface culling off
+            outlineMaterial.SetInt("_Cull", (int)UnityEngine.Rendering.CullMode.Off);
+
+            // Turn off depth writes
+            outlineMaterial.SetInt("_ZWrite", 0);
+        }
     }
     //这个函数参数最好是一个bool变量，而不是一直找其他类下的静态变量
     public static void drawTriangles()
@@ -71,9 +98,10 @@ public class DrawTriangles : MonoBehaviour
             int index = indices[i];
             int index1 = indices[i + 1];
             int index2 = indices[i + 2];
-            Vector2 v1 = points[index];
-            Vector2 v2 = points[index1];
-            Vector2 v3 = points[index2];
+
+            Vector3 v1 = new Vector3(points[index].x, points[index].y,layer);
+            Vector3 v2 = new Vector3(points[index1].x, points[index1].y, layer);
+            Vector3 v3 = new Vector3(points[index2].x, points[index2].y, layer);
 
             Extra.DrawLine(v1,v2, Vector3.forward, lineWidth, meshMaterial);
             Extra.DrawLine(v2,v3, Vector3.forward, lineWidth, meshMaterial);
@@ -81,8 +109,19 @@ public class DrawTriangles : MonoBehaviour
         }
         for(int i=0;i< points.Count; i++)
         {
-            Extra.DrawPointCyan(points[i], lineWidth, meshMaterial);
+            Extra.DrawCircle(new Vector3(points[i].x, points[i].y, layer), pointRadius, 0,outlineMaterial);
         }
+        for (int i = 0; i < points.Count; i++)
+        {
+            Vector3 position1 = new Vector3(points[i].x, points[i].y, layer);
+            Vector3 position2;
+            if ((i+1)==points.Count)
+                position2 = new Vector3(points[0].x, points[0].y, layer);
+            else
+                position2 = new Vector3(points[i+1].x, points[i+1].y, layer);
+            Extra.DrawLine(position1, position2, Vector3.forward, outlineWidth, outlineMaterial);
+        }
+
     }
     public static void InitMeshIndices(SpriteMeshData spriteMeshData)
     {
@@ -108,9 +147,9 @@ public class DrawTriangles : MonoBehaviour
         points = spriteMeshData.vertices.ToList();
 
         //set camera
-        Extra.SetInnerCamera(triangulateCamera, rect, rt, expandScale);
+        Extra.SetInnerCamera(triangulateCamera,layer, rect, rt, expandScale);
 
-        lineWidth = rect.height * 0.01f;
+        lineWidth = rect.height * 0.005f;
 
     }
 }

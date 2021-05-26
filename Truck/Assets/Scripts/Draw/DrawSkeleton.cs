@@ -16,7 +16,8 @@ public class DrawSkeleton : MonoBehaviour
 
     static Texture2D poseTexture;
 
-    static RawImage rawImage;
+    static RawImage rawImageBG;
+    static RawImage rawImageSK;
 
     static RectTransform rt;
 
@@ -24,7 +25,7 @@ public class DrawSkeleton : MonoBehaviour
 
     static Material skeletonMaterial;
     static Material capMaterial;
-
+    static float layer = 2;
     private void Start()
     {
         CreateSkeletonMaterial();
@@ -32,10 +33,13 @@ public class DrawSkeleton : MonoBehaviour
         renderTargetTexture = new RenderTexture(256, 256, 24);
 
         SkeletonCamera = GameObject.Find("SkeletonCamera").GetComponent<Camera>();
+        Extra.InitCamera(SkeletonCamera, layer);
+        SkeletonCamera.backgroundColor = Color.clear;
         SkeletonCamera.targetTexture = renderTargetTexture;
 
-        rawImage = GetComponent<RawImage>();
-        rawImage.texture = renderTargetTexture;
+        rawImageBG = GetComponent<RawImage>();
+        rawImageSK = transform.parent.Find("Skeleton").GetComponent<RawImage>();
+        rawImageSK.texture = renderTargetTexture;
 
         rt = GetComponent<RectTransform>();
     }
@@ -105,7 +109,7 @@ public class DrawSkeleton : MonoBehaviour
             return;
         //读取本地渲染好的Pose图像，显示
         poseTexture.LoadImage(Extra.GetImageByte(renderImagePath));
-        rawImage.texture = poseTexture;
+        rawImageBG.texture = poseTexture;
         Extra.AutoFill(poseTexture, rt);
     }
     
@@ -118,11 +122,11 @@ public class DrawSkeleton : MonoBehaviour
             Bone2D bone = Bones[i];
             if(bone)
             {
-                Extra.DrawBoneBody(bone, skeletonMaterial);
+                Extra.DrawBoneBody(bone, skeletonMaterial,layer) ;
 
                 //Color innerColor = bone.color * 0.25f;
                 //innerColor.a = bone.color.a;
-                Extra.DrawBoneCap(bone, capMaterial);
+                Extra.DrawBoneCap(bone, capMaterial,layer);
             }
         }
     }
@@ -147,7 +151,7 @@ public class DrawSkeleton : MonoBehaviour
         Bones = FindComponentsOfType<Bone2D>().ToList(); //全部物体中是Bone2D的
 
         //set camera
-        Extra.SetInnerCamera(SkeletonCamera, poseTexture.width / 100, poseTexture.height / 100, rt);
+        Extra.SetSkeletonCamera(SkeletonCamera,layer, poseTexture.width / 100, poseTexture.height / 100, rt);
     } 
     static T[] FindComponentsOfType<T>() where T: Component
     {

@@ -158,13 +158,33 @@ public class Extra
         files.Close();
         return imgByte;
     }
-    public static void SetInnerCamera(Camera camera, Rect rect, RectTransform rt, float expandScale = 1.1f)
-    {
-        SetInnerCamera(camera, rect.width, rect.height, rt, expandScale);
+
+    public static void InitCamera(Camera camera, float layer) {
+        camera.transform.position = new Vector3(0, 0, layer);
+        camera.farClipPlane = 0.1f;
+        camera.nearClipPlane = -0.1f;
     }
-    public static void SetInnerCamera(Camera camera, float width, float height, RectTransform rt, float expandScale = 1.1f)
+
+    public static void SetInnerCamera(Camera camera, float layer, Rect rect, RectTransform rt, float expandScale = 1.1f)
     {
-        camera.transform.position = new Vector3(width / 2, height / 2, -10);
+        SetInnerCamera(camera,layer,rect.width, rect.height, rt, expandScale);
+    }
+    public static void SetInnerCamera(Camera camera, float layer,float width, float height, RectTransform rt,float expandScale = 1.1f)
+    {
+        camera.transform.position = new Vector3(width / 2, height / 2, layer);
+        camera.farClipPlane = 0.1f;
+        camera.nearClipPlane = -0.1f;
+        if (width / height > rt.sizeDelta.x / rt.sizeDelta.y) //小幕布的尺寸大小
+            camera.orthographicSize = expandScale * width / 2;
+        else
+            camera.orthographicSize = expandScale * height / 2;
+    }
+
+    public static void SetSkeletonCamera(Camera camera, float layer, float width, float height, RectTransform rt, float expandScale = 1.1f)
+    {
+        camera.transform.position = new Vector3(width / 2,- height / 2, layer);
+        camera.farClipPlane = 0.1f;
+        camera.nearClipPlane = -0.1f;
         if (width / height > rt.sizeDelta.x / rt.sizeDelta.y) //小幕布的尺寸大小
             camera.orthographicSize = expandScale * width / 2;
         else
@@ -197,14 +217,17 @@ public class Extra
         GL.End();
         GL.PopMatrix();
     }
-    public static void DrawBoneBody(Bone2D bone, Material mat)
+    public static void DrawBoneBody(Bone2D bone, Material mat,float layer)
     {
-        DrawBoneBody(bone, bone.color,mat);
+        DrawBoneBody(bone, bone.color,mat, layer);
     }
-    static void DrawBoneBody(Bone2D bone, Color color, Material mat)
+    static void DrawBoneBody(Bone2D bone, Color color, Material mat,float layer)
     {
         //Handles.matrix = bone.transform.localToWorldMatrix;
-        DrawBoneBody(bone.transform.position, bone.globalendPosition, GetBoneRadius(bone), color, mat);
+        Vector3 begin = bone.globalstartPosition;
+        Vector3 end = bone.globalendPosition;
+        end.z = begin.z =layer;
+        DrawBoneBody(begin , end, GetBoneRadius(bone), color, mat);
     }
     static void DrawBoneBody(Vector3 position, Vector3 endPosition, float radius, Color color, Material mat)
     {
@@ -227,16 +250,18 @@ public class Extra
         }
     }
 
-    public static void DrawBoneCap(Bone2D bone, Material mat)
+    public static void DrawBoneCap(Bone2D bone, Material mat,float layer)
     {
         Color color = bone.color * 0.25f;
         color.a = 1f;
-        DrawBoneCap(bone, color, mat);
+        DrawBoneCap(bone, color, mat,layer);
     }
-    public static void DrawBoneCap(Bone2D bone, Color color, Material mat)
+    public static void DrawBoneCap(Bone2D bone, Color color, Material mat,float layer)
     {
         //Handles.matrix = bone.transform.localToWorldMatrix;
-        DrawBoneCap(bone.globalstartPosition, GetBoneRadius(bone), color, mat);
+        Vector3 center = bone.globalstartPosition;
+        center.z = layer;
+        DrawBoneCap(center, GetBoneRadius(bone), color, mat);
     }
     static void DrawBoneCap(Vector3 position, float radius, Color color, Material mat)
     {
