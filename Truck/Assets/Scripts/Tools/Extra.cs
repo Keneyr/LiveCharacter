@@ -28,7 +28,7 @@ public class Extra
         mat.SetPass(0);
         GL.PushMatrix();
         //GL.LoadOrtho();
-        GL.Begin(GL.LINES);
+        GL.Begin(4);
         //GL.Color(color);
         GL.Vertex(p1 + right * widthP1 * 0.5f);
         GL.Vertex(p1 - right * widthP1 * 0.5f);
@@ -204,12 +204,11 @@ public class Extra
     static void DrawBoneBody(Bone2D bone, Color color, Material mat)
     {
         //Handles.matrix = bone.transform.localToWorldMatrix;
-        DrawBoneBody(bone.transform.position, bone.localEndPosition, GetBoneRadius(bone), color, mat);
+        DrawBoneBody(bone.transform.position, bone.globalendPosition, GetBoneRadius(bone), color, mat);
     }
     static void DrawBoneBody(Vector3 position, Vector3 endPosition, float radius, Color color, Material mat)
     {
         Vector3 distance = position - endPosition;
-
         if (distance.magnitude > radius && color.a > 0f)
         {
             DrawLine(position, endPosition, Vector3.back, 2f * radius, 0f, mat);
@@ -237,7 +236,7 @@ public class Extra
     public static void DrawBoneCap(Bone2D bone, Color color, Material mat)
     {
         //Handles.matrix = bone.transform.localToWorldMatrix;
-        DrawBoneCap(Vector3.zero, GetBoneRadius(bone), color, mat);
+        DrawBoneCap(bone.globalstartPosition, GetBoneRadius(bone), color, mat);
     }
     static void DrawBoneCap(Vector3 position, float radius, Color color, Material mat)
     {
