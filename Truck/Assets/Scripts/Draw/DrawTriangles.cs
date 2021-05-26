@@ -17,7 +17,7 @@ public class DrawTriangles : MonoBehaviour
     static Material meshMaterial;
     static Material outlineMaterial;
     RenderTexture renderTargetTexture;
-    static float layer = 1;
+    static float layer = -2;
 
     static RectTransform rt;
     private void Start()
@@ -133,9 +133,9 @@ public class DrawTriangles : MonoBehaviour
         points = spriteMeshData.vertices.ToList();
 
         //set camera
-        Extra.SetInnerCamera(triangulateCamera,layer, Extra.rect, rt);
+       // Extra.SetInnerCamera(triangulateCamera,layer, Extra.rect, rt);
 
-        lineWidth = Extra.rect.height * 0.005f;
+        lineWidth = 100 * 0.00005f;
 
     }
 }

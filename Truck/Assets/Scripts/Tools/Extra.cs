@@ -18,7 +18,6 @@ public class Extra
     static Vector3[] s_array;
     static Vector3[] s_circleArray;
 
-    public static Rect rect;
     public static void DrawLine(Vector3 p1, Vector3 p2, Vector3 normal, float width, Color color, Material mat)
     {
         DrawLine(p1, p2, normal, width, width, color, mat);
@@ -199,19 +198,24 @@ public class Extra
 #endif
         }
     }
+
+    
+
     public static void SetInnerCamera(Camera camera, float layer, Rect rect, RectTransform rt, float expandScale = 1.1f)
     {
         SetInnerCamera(camera,layer,rect.width, rect.height, rt, expandScale);
     }
     public static void SetInnerCamera(Camera camera, float layer,float width, float height, RectTransform rt,float expandScale = 1.1f)
     {
+        width /= 100;
+        height /= 100;
         camera.transform.position = new Vector3(width / 2, -height / 2, layer);
         camera.farClipPlane = 0.1f;
         camera.nearClipPlane = -0.1f;
         if (width / height > rt.sizeDelta.x / rt.sizeDelta.y) //小幕布的尺寸大小
-            camera.orthographicSize = expandScale * width / 2;
+            camera.orthographicSize =  width / 2;
         else
-            camera.orthographicSize = expandScale * height / 2;
+            camera.orthographicSize =  height / 2;
     }
 
     static float GetBoneRadius(Bone2D bone)

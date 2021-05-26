@@ -16,7 +16,6 @@ public class DrawSkeleton : MonoBehaviour
 
     static Texture2D poseTexture;
 
-    static RawImage rawImageBG;
     static RawImage rawImageSK;
 
     static RectTransform rt;
@@ -25,7 +24,9 @@ public class DrawSkeleton : MonoBehaviour
 
     static Material skeletonMaterial;
     static Material capMaterial;
-    static float layer = 2;
+    static float layer = -3;
+
+    static GameObject bgSprite;
     private void Start()
     {
         CreateSkeletonMaterial();
@@ -34,14 +35,16 @@ public class DrawSkeleton : MonoBehaviour
 
         SkeletonCamera = GameObject.Find("SkeletonCamera").GetComponent<Camera>();
         Extra.InitCamera(SkeletonCamera, layer);
-        SkeletonCamera.backgroundColor = Color.clear;
+        SkeletonCamera.backgroundColor = new Color(1,1,1,0);
         SkeletonCamera.targetTexture = renderTargetTexture;
-
-        rawImageBG = GetComponent<RawImage>();
+       
         rawImageSK = transform.parent.Find("Skeleton").GetComponent<RawImage>();
         rawImageSK.texture = renderTargetTexture;
 
         rt = GetComponent<RectTransform>();
+
+        bgSprite = new GameObject("skeletonBG");
+        bgSprite.AddComponent<SpriteRenderer>();
     }
     void CreateSkeletonMaterial()
     {
@@ -109,8 +112,13 @@ public class DrawSkeleton : MonoBehaviour
             return;
         //读取本地渲染好的Pose图像，显示
         poseTexture.LoadImage(Extra.GetImageByte(renderImagePath));
-        rawImageBG.texture = poseTexture;
-        Extra.AutoFill(poseTexture, rt);
+        Sprite sp = Sprite.Create(poseTexture, new Rect(0, 0, poseTexture.width, poseTexture.height), Vector2.zero);
+        bgSprite.GetComponent<SpriteRenderer>().sprite = sp;
+        bgSprite.transform.position = new Vector3(0, -poseTexture.height / 100.0f, layer);
+
+
+        //Extra.AutoFill(poseTexture, rt);
+        
     }
     
     public static void DrawSkeletonBone2D()
@@ -152,7 +160,7 @@ public class DrawSkeleton : MonoBehaviour
 
 
         //set camera
-        Extra.SetInnerCamera(SkeletonCamera, layer, Extra.rect, rt);
+        //Extra.SetInnerCamera(SkeletonCamera, layer, Extra.rect, rt);
     } 
     static T[] FindComponentsOfType<T>() where T: Component
     {

@@ -15,24 +15,28 @@ public class DrawEdge : MonoBehaviour
     static float expandScale = 1.1f;
     
     static Material wireMaterial; //方便GL绘图的材质
-    RenderTexture renderTargetTexture;
+
+    static RawImage rawImg;
+
+
     static RectTransform rt;
-    static float layer = 0;
+    static float layer = -1;
     public static void ResetPastCharacterInfo()
     {
         m_TexVertices.Clear();
         nodes.Clear();
         edges.Clear();
     }
-
+    
     private void Start()
     {
         CreateLineMaterial();
         contourCamera = GameObject.Find("ContourCamera").GetComponent<Camera>();
+        rawImg = GetComponent<RawImage>();
         Extra.InitCamera(contourCamera, layer);
-        renderTargetTexture = new RenderTexture(256,256,24);
-        contourCamera.targetTexture = renderTargetTexture;
-        GetComponent<RawImage>().texture = renderTargetTexture;
+        //renderTargetTexture = new RenderTexture(1,1,24);
+        //contourCamera.targetTexture = renderTargetTexture;
+        //rawImg.texture = renderTargetTexture;
         rt = GetComponent<RectTransform>();
     }
 
@@ -91,23 +95,23 @@ public class DrawEdge : MonoBehaviour
         nodes.Clear();
         edges.Clear();
         //calculate rect
-        Rect rect = new Rect();
+        //Rect arect = new Rect();
         for (int i = 0; i < spriteMeshData.vertices.Length; i++)
         {
             spriteMeshData.vertices[i] /= 100.0f;
-            rect.yMax = Mathf.Max(rect.yMax, spriteMeshData.vertices[i].y);
-            rect.xMax = Mathf.Max(rect.xMax, spriteMeshData.vertices[i].x);
-            rect.yMin = Mathf.Min(rect.yMin, spriteMeshData.vertices[i].y);
-            rect.xMin = Mathf.Min(rect.xMin, spriteMeshData.vertices[i].x);
+            //rect.yMax = Mathf.Max(rect.yMax, spriteMeshData.vertices[i].y);
+           // rect.xMax = Mathf.Max(rect.xMax, spriteMeshData.vertices[i].x);
+           // rect.yMin = Mathf.Min(rect.yMin, spriteMeshData.vertices[i].y);
+           // rect.xMin = Mathf.Min(rect.xMin, spriteMeshData.vertices[i].x);
         }
-        Extra.rect = rect;
+
         //Init data
         m_TexVertices = spriteMeshData.vertices.ToList();
         nodes = m_TexVertices.ConvertAll(v => Node.Create(m_TexVertices.IndexOf(v)));
         edges = spriteMeshData.edges.ToList().ConvertAll(e => Edge.Create(nodes[e.index1], nodes[e.index2]));
         //set camera
-        Extra.SetInnerCamera(contourCamera,layer, rect, rt, expandScale);
-        
-        lineWidth = rect.height*0.01f;
+        //Extra.SetInnerCamera(contourCamera,layer, rect, rt, expandScale);
+        //renderTargetTexture = new RenderTexture((int)rect.width,(int) rect.height, 24);
+        lineWidth = CameraGroup.rect.height*0.0001f;
     }
 }

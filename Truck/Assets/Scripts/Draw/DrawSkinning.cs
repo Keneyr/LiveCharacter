@@ -12,7 +12,7 @@ public class DrawSkinning : MonoBehaviour
     static RectTransform rt;
     static Camera SkinningCamera;
     static RawImage rawImage;
-    static int layer = 4;
+    static int layer = -4;
     RenderTexture renderTargetTexture;
 
     static Material meshMaterial;
@@ -109,7 +109,7 @@ public class DrawSkinning : MonoBehaviour
             colors.Add(vertexColor);
 
             Console.Log("Node Count: " + nodes.Count);
-            Extra.SetInnerCamera(SkinningCamera, layer, Extra.rect, rt);
+          //  Extra.SetInnerCamera(SkinningCamera, layer, Extra.rect, rt);
         }
         //set mesh
         mesh = spriteMeshData.sharedMesh;
