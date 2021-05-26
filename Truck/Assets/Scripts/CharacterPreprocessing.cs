@@ -429,8 +429,8 @@ public class CharacterPreprocessing : MonoBehaviour
             return BoneSkinningResult.MeshError;
 
         CreateSpriteMeshGameObject(); //创建SpriteMeshInstance
-        BindBones();
-        CalculateAutomaticWeights();
+        BindBones(); //骨骼绑定，计算权重，自动更新skinnedMeshRenderer
+        
 
         DrawSkinning.InitBindingInfo();
         return BoneSkinningResult.Success;
@@ -470,7 +470,8 @@ public class CharacterPreprocessing : MonoBehaviour
             //update spriteMeshData & spriteMeshInstance(GO)
             spriteMeshData.bindPoses = bindPoses.ToArray();
             spriteMeshGO.bones = BonesInHierarchy;
-            UpdateRenderer();
+            CalculateAutomaticWeights();
+            UpdateRenderer(); //估计要放在SpriteMeshGameObject下每帧执行
         }
     }
     static void UpdateRenderer()
@@ -480,63 +481,38 @@ public class CharacterPreprocessing : MonoBehaviour
         if(spriteMeshData)
         {
             UpdateSpriteMeshDataSharedMesh();
-
             UnityEngine.Mesh sharedMesh = spriteMeshData.sharedMesh;
-            if(sharedMesh.bindposes.Length > 0 && spriteMeshGO.bones.Count > sharedMesh.bindposes.Length)
+            if (sharedMesh.bindposes.Length > 0 && spriteMeshGO.bones.Count > sharedMesh.bindposes.Length)
             {
-                spriteMeshGO.bones = spriteMeshGO.bones.GetRange(0,sharedMesh.bindposes.Length);
+                spriteMeshGO.bones = spriteMeshGO.bones.GetRange(0, sharedMesh.bindposes.Length);
             }
-            if(CanEnableSkinning(spriteMeshGO))
-            {
-                //去掉一些这俩存在的组件是因为他们会和SkinnedMeshRenderer冲突
-                MeshFilter meshFilter = spriteMeshGO.cachedMeshFilter;
-                MeshRenderer meshRenderer = spriteMeshGO.cachedRenderer as MeshRenderer;
 
-                if(meshFilter)
-                {
-                    GameObject.DestroyImmediate(meshFilter);
-                }
-                if(meshRenderer)
-                {
-                    GameObject.DestroyImmediate(meshRenderer);
-                }
+            if (CanEnableSkinning(spriteMeshGO))
+            {
+                
                 SkinnedMeshRenderer skinnedMeshRenderer = spriteMeshGO.cachedSkinnedRenderer;
                 if(!skinnedMeshRenderer)
                 {
                     skinnedMeshRenderer = spriteMeshGO.gameObject.AddComponent<SkinnedMeshRenderer>();
                 }
+                skinnedMeshRenderer.sharedMesh = spriteMeshData.sharedMesh;
                 skinnedMeshRenderer.bones = spriteMeshGO.bones.ConvertAll(bone=>bone.transform).ToArray();
                 if(spriteMeshGO.bones.Count>0)
                 {
-                    //skinnedMeshRenderer.rootBone = null; //感觉不应该赋值
                     skinnedMeshRenderer.rootBone = spriteMeshGO.bones[0].transform;
                 }
                 
+                
             }
-            else
-            {
-                SkinnedMeshRenderer skinnedMeshRenderer = spriteMeshGO.cachedSkinnedRenderer;
-                MeshFilter meshFilter = spriteMeshGO.cachedMeshFilter;
-                MeshRenderer meshRenderer = spriteMeshGO.cachedRenderer as MeshRenderer;
-
-                if(skinnedMeshRenderer)
-                {
-                    GameObject.DestroyImmediate(skinnedMeshRenderer);
-                }
-                if(!meshFilter)
-                {
-                    meshFilter = spriteMeshGO.gameObject.AddComponent<MeshFilter>();
-                }
-                if(!meshRenderer)
-                {
-                    meshRenderer = spriteMeshGO.gameObject.AddComponent<MeshRenderer>();
-                }
-            }
+            
         }
     }
     static bool CanEnableSkinning(SpriteMeshGameObject spriteMeshInstance)
     {
-        return spriteMeshInstance.spriteMeshData && !HasNullBones(spriteMeshInstance) && spriteMeshInstance.bones.Count > 0 && (spriteMeshInstance.spriteMeshData.sharedMesh.bindposes.Length == spriteMeshInstance.bones.Count);
+        return spriteMeshInstance.spriteMeshData && 
+            !HasNullBones(spriteMeshInstance) && 
+            spriteMeshInstance.bones.Count > 0 && 
+     (spriteMeshInstance.spriteMeshData.sharedMesh.bindposes.Length == spriteMeshInstance.bones.Count);
     }
     public static bool HasNullBones(SpriteMeshGameObject spriteMeshInstance)
     {

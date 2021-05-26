@@ -21,13 +21,10 @@ public class SpriteMeshGameObject : MonoBehaviour
 
     List<Bone2D> m_CachedBones = new List<Bone2D>(); //自定义的Bone2D
 
-    MeshFilter mCachedMeshFilter; //要删除的组件
-
-    Renderer mCachedRenderer; //要删除的组件
-
-    MaterialPropertyBlock m_MaterialPropertyBlock;
-
     SkinnedMeshRenderer mCachedSkinnedRenderer; //要添加的组件
+
+
+
 
     public SpriteMeshData spriteMeshData
     {
@@ -104,17 +101,6 @@ public class SpriteMeshGameObject : MonoBehaviour
         }
     }
     
-    public MeshFilter cachedMeshFilter
-    {
-        get
-        {
-            if(!mCachedMeshFilter)
-            {
-                mCachedMeshFilter = GetComponent<MeshFilter>();
-            }
-            return mCachedMeshFilter;
-        }
-    }
     public SkinnedMeshRenderer cachedSkinnedRenderer
     {
         get
@@ -126,27 +112,28 @@ public class SpriteMeshGameObject : MonoBehaviour
             return mCachedSkinnedRenderer;
         }
     }
-    public Renderer cachedRenderer
+
+    //private void LateUpdate()
+    //{
+    //    spriteMeshData.sharedMesh.vertices = spriteMeshData.vertices;
+    //    spriteMesh
+    //}
+
+    void OnWillRenderObject()
     {
-        get
-        {
-            if(!mCachedRenderer)
-            {
-                mCachedRenderer = GetComponent<Renderer>();
-            }
-            return mCachedRenderer;
-        }
+        UpdateRenderers();
     }
-    MaterialPropertyBlock materialPropertyBlock
+
+    //更新网格
+    void UpdateRenderers()
     {
-        get
+        Mesh l_mesh = null;
+
+        if (cachedSkinnedRenderer)
         {
-            if(m_MaterialPropertyBlock == null)
-            {
-                m_MaterialPropertyBlock = new MaterialPropertyBlock();
-            }
-            return m_MaterialPropertyBlock;
+            cachedSkinnedRenderer.sharedMesh = spriteMeshData.sharedMesh;
         }
+       
     }
 
 
