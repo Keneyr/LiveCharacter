@@ -37,7 +37,7 @@ public class CharacterPreprocessing : MonoBehaviour
         {
             if (!m_SpritesMaterial)
             {
-                m_SpritesMaterial = new Material(Shader.Find("Sprites/Default"));
+                m_SpritesMaterial = new Material(Shader.Find("Unlit/Transparent"));
                 //GameObject go = new GameObject();
                 //SpriteRenderer sr = go.AddComponent<SpriteRenderer>();
                 //m_SpritesMaterial = sr.sharedMaterial;
@@ -505,13 +505,6 @@ public class CharacterPreprocessing : MonoBehaviour
         {
             UpdateSpriteMeshDataSharedMesh();
             UnityEngine.Mesh sharedMesh = spriteMeshData.sharedMesh;
-            List<Vector2> uvs = new List<Vector2>();
-            for (int i = 0; i < sharedMesh.uv.Length; i++)
-            {
-                uvs.Add(new Vector2(sharedMesh.uv[i].x * 100.0f, 1+sharedMesh.uv[i].y * 100.0f));
-            }
-            sharedMesh.SetUVs(0, uvs);
-            sharedMesh.RecalculateNormals();
 
             if (sharedMesh.bindposes.Length > 0 && spriteMeshGO.bones.Count > sharedMesh.bindposes.Length)
             {
@@ -577,10 +570,10 @@ public class CharacterPreprocessing : MonoBehaviour
         List<UnityEngine.BoneWeight> boneWeights = new List<UnityEngine.BoneWeight>(boneWeightsData.Length);
 
         Vector2 textureWidthHeightInv = 
-            new Vector2(1f / sprite.texture.width, 1f / sprite.texture.height);
+            new Vector2(1f / sprite.texture.width, 1f / sprite.texture.height)*100.0f;
 
         Vector2[] uvs = 
-            (new List<Vector2>(spriteMeshData.vertices)).ConvertAll(v => Vector2.Scale(v, textureWidthHeightInv)).ToArray(); //?
+            (new List<Vector2>(spriteMeshData.vertices)).ConvertAll(v =>Vector2.up + Vector2.Scale(v, textureWidthHeightInv)).ToArray(); //?
     
         Vector3[] tmp = 
             new List<Vector2>((spriteMeshData.vertices)).ConvertAll(v => new Vector3(v.x,v.y,0)).ToArray() ;
