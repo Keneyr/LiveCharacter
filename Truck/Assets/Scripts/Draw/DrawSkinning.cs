@@ -108,7 +108,7 @@ public class DrawSkinning : MonoBehaviour
 
             colors.Add(vertexColor);
 
-            Console.Log("Node Count: " + nodes.Count);
+            //Console.Log("Node Count: " + nodes.Count);
           //  Extra.SetInnerCamera(SkinningCamera, layer, Extra.rect, rt);
         }
         //set mesh

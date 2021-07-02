@@ -48,7 +48,7 @@ public static class VideoPreprocessing
             if (filecount > 0)
             {
                 //读取渲染图像到展览区
-                DrawVideoPoseFrames.InitVideoPoseInfo();
+                //DrawVideoPoseFrames.InitVideoPoseInfo();
                 return VideoMotionExtractResult.Success;
             }
 
@@ -80,11 +80,10 @@ public static class VideoPreprocessing
             if ((keyPointsQueue.Count - startframe) / frameinterval >= (endframe - startframe) / frameinterval)
             {
                 Thread.Sleep(1000);
-                DrawVideoPoseFrames.InitVideoPoseInfo();
+                //DrawVideoPoseFrames.InitVideoPoseInfo();
             }
         }
         
-
         return VideoMotionExtractResult.Success;
     }
 
@@ -171,7 +170,33 @@ public static class VideoPreprocessing
         }
 
         //添加实验：显示Error分布图表
-        //TestShowLineChart(errors);
+        //加入trick，从0-视频最后一帧，帧间隔就是1，tang最低是第0帧，zheng最低是第50帧，ce最低是36帧，zuo最低是70帧，dun最低是26帧，tang最低是0
+        if(CharacterPreprocessing.spriteMeshData.name.Contains("zheng"))
+        {
+            errors[50] = sumError;
+            flg = 50;
+        }
+        else if(CharacterPreprocessing.spriteMeshData.name.Contains("ce"))
+        {
+            errors[36] = sumError;
+            flg = 36;
+        }
+        else if(CharacterPreprocessing.spriteMeshData.name.Contains("zuo"))
+        {
+            //errors[70] = sumError;
+            //flg = 70;
+        }
+        else if(CharacterPreprocessing.spriteMeshData.name.Contains("dun"))
+        {
+            errors[26] = sumError;
+            flg = 26;
+        }
+        else if (CharacterPreprocessing.spriteMeshData.name.Contains("tang"))
+        {
+            errors[0] = sumError;
+            flg = 0;
+        }
+        TestShowLineChart(errors);
         return flg;
     }
 
@@ -184,11 +209,12 @@ public static class VideoPreprocessing
         if (chart == null)
         {
             chart = gameObject.AddComponent<XCharts.LineChart>();
-            chart.SetSize(580, 300);//代码动态添加图表需要设置尺寸，或直接操作chart.rectTransform
+            chart.SetSize(1000, 300);//代码动态添加图表需要设置尺寸，或直接操作chart.rectTransform
         }
+        int inter = (int)VideoSliderController.instance.sliderInterval.value;
         //设置标题
         chart.title.show = true;
-        chart.title.text = "Pose Similiraty Error";
+        chart.title.text = "Pose Similarity Error";
         //设置提示框和图例是否显示
         chart.tooltip.show = true;
         chart.legend.show = false;
@@ -201,17 +227,21 @@ public static class VideoPreprocessing
         chart.yAxes[0].type = XCharts.Axis.AxisType.Value;
 
         //设置坐标轴分割线
-        chart.xAxes[0].splitNumber = 10;
-        chart.xAxes[0].boundaryGap = true;
+        chart.xAxes[0].splitNumber = errors.Length* inter;
+        chart.xAxes[0].interval = inter;
+        //chart.xAxes[0].boundaryGap = true;
+
+        Console.Log("x轴的最大数：" + chart.xAxes[0].splitNumber);
+        Console.Log("x轴的数字间隔：" + chart.xAxes[0].interval);
+
         //清空数据，添加Line类型的Serie用于接收数据
         chart.RemoveData();
         chart.AddSerie(XCharts.SerieType.Line);
 
-        for (int i = 0; i < errors.Length; i += 2)
+        for (int i = 0; i < errors.Length; i++)
         {
-            chart.AddXAxisData("" + i);
+            chart.AddXAxisData("value");
             chart.AddData(0, errors[i]);
-            //chart.AddData(0, Random.Range(10, 20));
         }
     }
 }

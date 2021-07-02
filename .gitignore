@@ -11,7 +11,7 @@
 /[Mm]emoryCaptures/
 *.unitypackage
 /builtin_shaders-2018.3.3f1/
-
+/Truck/Data/
 # Asset meta data should only be ignored when the corresponding asset is also ignored
 !/[Aa]ssets/**/*.meta
 

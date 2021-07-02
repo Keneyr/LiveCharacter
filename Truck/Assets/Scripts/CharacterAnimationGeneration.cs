@@ -1,7 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
+using UnityEngine.UI;
 /// <summary>
 /// 负责动画生成的最后一步，当内存中存在有效运动数据、角色蒙皮数据，开始重定向
 /// </summary>
@@ -10,11 +10,25 @@ public class CharacterAnimationGeneration : MonoBehaviour
     public static bool StartDriving = false;
     static int startIndex;
     static int endIndex;
+    public RawImage img;
+    public static RawImage animationImg;
+    private void Awake()
+    {
+        animationImg = img;
+        img.gameObject.SetActive(false);
+    }
     private void Update()
     {
         if(StartDriving)
         {
             ApplyCalibratedMotionData2InitialCharacter();
+            if(VideoSliderController.instance.sliderStartFrame.value < 
+                VideoSliderController.instance.sliderEndFrame.value)
+            {
+                VideoSliderController.instance.sliderStartFrame.value += 
+                    VideoSliderController.instance.sliderInterval.value;
+            }
+                
         }
     }
 
@@ -55,6 +69,7 @@ public class CharacterAnimationGeneration : MonoBehaviour
         //if(endIndex < VideoPreprocessing.calibratedSkeletonQueue.Count) //否则越界
         //{
         StartDriving = true;
+        animationImg.gameObject.SetActive(true);
         //}
     }
     static void ApplyCalibratedMotionData2InitialCharacter()

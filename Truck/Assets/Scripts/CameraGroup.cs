@@ -8,14 +8,17 @@ public class CameraGroup : Singleton<CameraGroup>
     Camera triangulateCamera;
     Camera skeletonCamera;
     Camera skinningCamera;
+    Camera animationCamera;
     RawImage contourImg;
     RawImage triangulateImg;
     RawImage skeletonImg;
     RawImage skinningImg;
     RawImage mainCharaterImg;
+    RawImage animationImg;
     // Start is called before the first frame update
     void Start()
     {
+        animationCamera = transform.Find("AnimationCamera").GetComponent<Camera>();
         contourCamera = transform.Find("ContourCamera").GetComponent<Camera>();
         triangulateCamera =transform.Find("TriangulateCamera").GetComponent<Camera>();
         skeletonCamera = transform.Find("SkeletonCamera").GetComponent<Camera>();
@@ -24,6 +27,7 @@ public class CameraGroup : Singleton<CameraGroup>
         triangulateImg = CharacterInnerStepManager.instance.imageTriangulation;
         skeletonImg = CharacterInnerStepManager.instance.imageSkeleton;
         skinningImg = CharacterInnerStepManager.instance.BoneBinding;
+        animationImg = CharacterAnimationGeneration.animationImg;
     }
 
     public static Rect rect;
@@ -43,18 +47,24 @@ public class CameraGroup : Singleton<CameraGroup>
         skeletonImg.texture = skeletonCamera.targetTexture = rt;
         rt = new RenderTexture((int)width, (int)height, 24);
         skinningImg.texture = skinningCamera.targetTexture = rt;
+        rt = new RenderTexture((int)width, (int)height, 24);
+        animationImg.texture = animationCamera.targetTexture = rt;
+        
+
         transform.position = new Vector3(width / 200, -height / 200, 0);
 
         contourCamera.orthographicSize = height / 200;
         triangulateCamera.orthographicSize = height / 200;
         skeletonCamera.orthographicSize = height / 200;
         skinningCamera.orthographicSize = height / 200;
+        animationCamera.orthographicSize = height / 200;
 
-      
+
         SetRectTransfrom(contourImg);
         SetRectTransfrom(triangulateImg);
         SetRectTransfrom(skeletonImg);
         SetRectTransfrom(skinningImg);
+        SetRectTransfrom(animationImg);
 
         //contourImg
         //if (width / height > rt.sizeDelta.x / rt.sizeDelta.y) //小幕布的尺寸大小
