@@ -129,6 +129,7 @@ change openpose1.5.1 to openpose1.7.0
 
 ## 系统使用说明
 
+[](run.png)
 
 ## 参考文献
 
