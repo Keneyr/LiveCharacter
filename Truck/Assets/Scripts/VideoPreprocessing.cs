@@ -170,32 +170,7 @@ public static class VideoPreprocessing
         }
 
         //添加实验：显示Error分布图表
-        //加入trick，从0-视频最后一帧，帧间隔就是1，tang最低是第0帧，zheng最低是第50帧，ce最低是36帧，zuo最低是70帧，dun最低是26帧，tang最低是0
-        if(CharacterPreprocessing.spriteMeshData.name.Contains("zheng"))
-        {
-            errors[50] = sumError;
-            flg = 50;
-        }
-        else if(CharacterPreprocessing.spriteMeshData.name.Contains("ce"))
-        {
-            errors[36] = sumError;
-            flg = 36;
-        }
-        else if(CharacterPreprocessing.spriteMeshData.name.Contains("zuo"))
-        {
-            //errors[70] = sumError;
-            //flg = 70;
-        }
-        else if(CharacterPreprocessing.spriteMeshData.name.Contains("dun"))
-        {
-            errors[26] = sumError;
-            flg = 26;
-        }
-        else if (CharacterPreprocessing.spriteMeshData.name.Contains("tang"))
-        {
-            errors[0] = sumError;
-            flg = 0;
-        }
+        
         TestShowLineChart(errors);
         return flg;
     }
