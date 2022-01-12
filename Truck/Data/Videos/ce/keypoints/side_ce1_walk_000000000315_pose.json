@@ -1,9 +1,0 @@
-{
-    "pose_0": {
-        "type_id": "opencv-matrix",
-        "rows": 0,
-        "cols": 0,
-        "dt": "u",
-        "data": []
-    }
-}
